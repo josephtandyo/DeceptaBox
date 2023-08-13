@@ -18,45 +18,56 @@ The game is a simple deception game with the main goal being getting as many poi
       Declining a nice gift: The host will gain 1 point
       Declining a devious gift: The host will DIE and the guest will gain 1 point
 
-      Thrashing ANY gift: The gift is forever GONE; the gift type will be revealed
-         Trashing a gift will use up 1 trashability
+      Thrashing ANY gift: The gift is forever GONE; the gift type will be revealed 
+        - Trashing a gift will use up 1 trashability
 
-  5. If a player visits you, they will act as the guest and you will act as the host
+  5. If a player visits you, they will act as the guest, and you will act as the host
 
 
 ## Some of the features and commands of this bot includes:
-  **!guide:** 
-        To see the commands
+  - **!guide:** 
+    - To see the commands
   
-  **!rules:**
-        To see the rules
+
+  - **!rules:**
+    - To see the rules
   
-  **!stats (@...):**
-        To see points and trashability
+
+  - **!stats (@...):**
+    - To see points and trashability
   
-  **!leaderboards:** 
-        To see the current leaderboard
+
+  - **!leaderboards:**
+    - To see the current leaderboard
   
-  **!highscores:**
-        To see the current high scores
+
+  - **!highscores:**
+    - To see the current high scores
   
-  **!visit @...:**
-        To visit other players
+
+  - **!visit @...:**
+    - To visit other players
   
-  **!home:**
-        To go back home
+
+  - **!home:**
+    - To go back home
   
-  **!unbox:**
-        To unbox the gift
+
+  - **!unbox:**
+    - To unbox the gift
   
-  **!decline:**
-        To decline the gift
+
+  - **!decline:**
+    - To decline the gift
   
-  **!trash:**
-        To trash the gift
+
+  - **!trash:**
+    - To trash the gift
   
-  **!devious:**
-        To give a devious gift
+
+  - **!devious:**
+    - To give a devious gift
   
-  **!nice:**
-        To give a nice gift
+
+  - **!nice:**
+    - To give a nice gift
