@@ -25,8 +25,11 @@ The game is a simple deception game with the main goal being getting as many poi
 
 
 ### Some of the features and commands of this bot includes:
-  ⋅⋅* '!guide'
-      + To see the commands
+⋅⋅⋅To have a line break without a paragraph, you will need to use two trailing spaces.⋅⋅
+⋅⋅⋅Note that this line is separate, but within the same paragraph.⋅⋅
+  
+  '!guide'
+  To see the commands
   
   '!rules'
   To see the rules
