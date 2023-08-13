@@ -24,7 +24,7 @@ The game is a simple deception game with the main goal being getting as many poi
   5. If a player visits you, they will act as the guest, and you will act as the host
 
 
-## Some of the features and commands of this bot includes:
+## Some of the commands of this bot includes:
   - **!guide:** 
     - To see the commands
   
@@ -71,3 +71,9 @@ The game is a simple deception game with the main goal being getting as many poi
 
   - **!nice:**
     - To give a nice gift
+
+
+## Other Features:
+ - When player dies, a (dead) role is given to them
+ - Choose which server channel the game is playable in and commands usable in
+ - Every day the leaderboard and game resets for a brand-new game
