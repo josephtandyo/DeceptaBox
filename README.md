@@ -25,23 +25,20 @@ The game is a simple deception game with the main goal being getting as many poi
 
 
 ## Some of the features and commands of this bot includes:
-  **!guide**
-  To see the commands
+  **!guide:** 
+      To see the commands
   
-  **!rules**
-  To see the rules
+  **!rules:**
+      To see the rules
   
-  **!stats (@...)**
-  To see points and
-  trashability
+  **!stats (@...):**
+      To see points and trashability
   
-  **!leaderboards**
-  To see the current
-  leaderboard
+  **!leaderboards:** 
+      To see the current leaderboard
   
-  **!highscores**
-  To see the current
-  high scores
+  **!highscores:**
+      To see the current high scores
   
   **!visit @...**
   To visit other players
