@@ -9,6 +9,8 @@ from discord.ext import commands
 from discord.utils import get
 import psutil
 
+import key
+
 # hardcode: [channel specific, role specific, server specific]
 # VERSION 1.5
 # Added high score and reset score everyday
@@ -1212,4 +1214,4 @@ async def check_winner():
         return True
 
 
-client.run("MTA1NzU1NjQzNzgwODczMDEzMw.GJDHVk.r0gchGbpHbZGlwGfVQpkoi3XhvVHG9oN1h_Xk8")
+client.run(key.key)
