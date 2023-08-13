@@ -22,7 +22,10 @@ The game is a simple deception game with the main goal being getting as many poi
         - Trashing a gift will use up 1 trashability
 
   5. If a player visits you, they will act as the guest, and you will act as the host
-
+    
+Note:
+  - You can only visit and get visited by one player at a time
+  - You can't visit anyone while a gift has not been unboxed, declined or trashed
 
 ## Some of the commands of this bot includes:
   - **!guide:** 
@@ -77,3 +80,7 @@ The game is a simple deception game with the main goal being getting as many poi
  - When player dies, a (dead) role is given to them
  - Choose which server channel the game is playable in and commands usable in
  - Every day the leaderboard and game resets for a brand-new game
+
+### Important Note:
+- To be able to play this game on Discord, YOU NEED to enable this in user settings
+![img.png](img.png)
