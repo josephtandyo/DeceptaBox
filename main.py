@@ -9,6 +9,7 @@ from discord.ext import commands
 from discord.utils import get
 import psutil
 
+import ids
 import key
 
 # hardcode: [channel specific, role specific, server specific]
@@ -62,7 +63,7 @@ async def on_command_error(ctx, error):
 
 
 async def wrong_chat(channel_id, in_server, command_type):
-    desired_channel_id = 1059322301021171712
+    desired_channel_id = ids.channel_ID
 
     channel = await client.fetch_channel(desired_channel_id)
     # when wrong channel and not in dm
@@ -82,8 +83,8 @@ async def wrong_chat(channel_id, in_server, command_type):
 
 
 async def dead_person(role_id, specifics=None):
-    dead_role_id = 1059212979868016670
-    role_name = "Dead"
+    dead_role_id = ids.dead_role_ID
+    role_name = ids.dead_role_NAME
 
     if role_id == dead_role_id and specifics == "visiting dead":
         return "The host you tried to visit have **died**, you would be visiting a haunted house"
@@ -104,7 +105,7 @@ async def dead_person(role_id, specifics=None):
 
 
 async def make_member(player_id):
-    guild_id = 1057592172381208629
+    guild_id = ids.guild_ID
 
     guild_obj = client.get_guild(guild_id)
     member_obj = guild_obj.get_member(int(player_id))
@@ -113,8 +114,8 @@ async def make_member(player_id):
 
 
 async def reset():
-    channel_id = 1059322301021171712
-    guid_id = 1057592172381208629
+    channel_id = ids.channel_ID
+    guid_id = ids.guild_ID
 
     #change time
     while True:
