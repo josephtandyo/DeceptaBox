@@ -25,8 +25,8 @@ The game is a simple deception game with the main goal being getting as many poi
 
 
 ### Some of the features and commands of this bot includes:
-  '!guide'
-  To see the commands
+  - '!guide'
+      - To see the commands
   
   '!rules'
   To see the rules
