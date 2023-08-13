@@ -3,14 +3,16 @@ import datetime
 import shutil
 
 import discord
-import json
 import os
 from discord.ext import commands
 from discord.utils import get
 import psutil
 
 import settings
-import token
+import tokens
+
+import highscores
+import playerData
 
 # hardcode: [channel specific, role specific, server specific]
 # VERSION 1.5
@@ -129,7 +131,7 @@ async def reset():
         guild = client.get_guild(guid_id)
 
         # final leaderboard is dark gold
-        title, name_list, value_list, status = await make_leaderboard(True)
+        title, name_list, value_list, status = await playerData.make_leaderboard(True)
         em_board = discord.Embed(title=title, color=discord.Color.orange())
         if name_list == ['The Leaderboard is Empty']:
             print("No one played today")
@@ -150,7 +152,7 @@ async def reset():
             await channel.send(embed=em_announce)
             await channel.send(embed=em_board)
 
-            users = await get_player_data()
+            users = await playerData.get_player_data()
             for player_id in users.keys():
                 member_obj = await make_member(player_id)
                 for roles in member_obj.roles:
@@ -158,11 +160,11 @@ async def reset():
                     if remove_role:
                         dead_role = get(guild.roles, name=role_name)
                         await member_obj.remove_roles(dead_role)
-            await reset_data()
+            await playerData.reset_data()
 
-            scores = await get_high_score_data()
+            scores = await highscores.get_high_score_data()
             for user_id in scores.keys():
-                await update_high_score(user_id, 0, True, "Old Score")
+                await highscores.update_high_score(user_id, 0, True, "Old Score")
             # client.get_command("visit").reset_cooldown(ctx)
 
 
@@ -277,15 +279,15 @@ async def stats(ctx, member: discord.Member = None):
 
     # Checking own stats is magenta
     elif member is None or member == ctx.author:
-        await add_player(ctx.author)
+        await playerData.add_player(ctx.author)
         user = ctx.author
-        users = await get_player_data()
+        users = await playerData.get_player_data()
 
     # Checking other player's stats is dark magenta
     else:
-        await add_player(member)
+        await playerData.add_player(member)
         user = member
-        users = await get_player_data()
+        users = await playerData.get_player_data()
 
     total = users[str(user.id)]["Total Points"]
     trashability = users[str(user.id)]["Trashability"]
@@ -330,7 +332,7 @@ async def leaderboards(ctx):
         return
 
     # current leaderboard is dark gold
-    title, name_list, value_list, status = await make_leaderboard()
+    title, name_list, value_list, status = await playerData.make_leaderboard()
 
     em_board = discord.Embed(title=title, color=discord.Color.orange())
 
@@ -352,7 +354,7 @@ async def highscores(ctx):
         return
 
     # current leaderboard is dark gold
-    name_list, value_list, death_list = await make_highscores()
+    name_list, value_list, death_list = await highscores.make_highscores()
 
     em_board = discord.Embed(title="The Current High Scores: ", color=discord.Color.orange())
 
@@ -387,8 +389,8 @@ async def visit(ctx, member: discord.Member):
         client.get_command("visit").reset_cooldown(ctx)
         return
 
-    await add_player(ctx.author)
-    await add_player(member)
+    await playerData.add_player(ctx.author)
+    await playerData.add_player(member)
 
     # Checking if player is dead. Role specific.
     for role in ctx.author.roles:
@@ -432,7 +434,7 @@ async def visit(ctx, member: discord.Member):
         client.get_command("visit").reset_cooldown(ctx)
         return
 
-    users = await get_player_data()
+    users = await playerData.get_player_data()
     inventory_full = users[str(ctx.author.id)]["Received"]
     already_visiting = users[str(ctx.author.id)]["Visiting"]
     guest_at_home = users[str(ctx.author.id)]["Visited"]
@@ -505,8 +507,8 @@ async def visit(ctx, member: discord.Member):
 
     # Visiting a valid player is green
     else:
-        await update_stats(member.id, 0, ctx.author.id, "Visited")
-        await update_stats(ctx.author.id, 0, member.id, "Visiting")
+        await playerData.update_stats(member.id, 0, ctx.author.id, "Visited")
+        await playerData.update_stats(ctx.author.id, 0, member.id, "Visiting")
 
         em_host = discord.Embed(color=discord.Color.blue())
         em_host.add_field(name=f"{ctx.author.name} has come to visit!",
@@ -543,8 +545,8 @@ async def home(ctx):
             client.get_command("visit").reset_cooldown(ctx)
             return
 
-    await add_player(ctx.author)
-    users = await get_player_data()
+    await playerData.add_player(ctx.author)
+    users = await playerData.get_player_data()
     gift_type = users[str(ctx.author.id)]["Received"]
     already_visiting = users[str(ctx.author.id)]["Visiting"]
 
@@ -571,8 +573,8 @@ async def home(ctx):
         for player_id in users.keys():
             if int(player_id) == int(users[str(ctx.author.id)]["Visiting"]):
                 member_obj = await make_member(int(player_id))
-                await update_stats(ctx.author.id, 0, False, "Visiting")
-                await update_stats(member_obj.id, 0, False, "Visited")
+                await playerData.update_stats(ctx.author.id, 0, False, "Visiting")
+                await playerData.update_stats(member_obj.id, 0, False, "Visited")
 
                 em_host = discord.Embed(color=discord.Color.blue())
                 em_host.add_field(name=f"{ctx.author.name} has went home :(",
@@ -591,9 +593,9 @@ async def home(ctx):
 
 @client.command()
 async def nice(ctx):
-    await add_player(ctx.author)
+    await playerData.add_player(ctx.author)
     user = ctx.author
-    users = await get_player_data()
+    users = await playerData.get_player_data()
 
     visitors_id = users[str(user.id)]["Visited"]
 
@@ -617,10 +619,10 @@ async def nice(ctx):
 
     # when someone actually did visit
     if visitors_id is not False:
-        await update_stats(visitors_id, 0, "nice", "Received")
-        await update_stats(visitors_id, 0, ctx.author.id, "Giver")
-        await update_stats(ctx.author.id, 0, False, "Visited")
-        await update_stats(visitors_id, 0, False, "Visiting")
+        await playerData.update_stats(visitors_id, 0, "nice", "Received")
+        await playerData.update_stats(visitors_id, 0, ctx.author.id, "Giver")
+        await playerData.update_stats(ctx.author.id, 0, False, "Visited")
+        await playerData.update_stats(visitors_id, 0, False, "Visiting")
         visitor = await client.fetch_user(visitors_id)
 
         # Getting and delivering a gift is blue
@@ -641,9 +643,9 @@ async def nice(ctx):
 
 @client.command()
 async def devious(ctx):
-    await add_player(ctx.author)
+    await playerData.add_player(ctx.author)
     user = ctx.author
-    users = await get_player_data()
+    users = await playerData.get_player_data()
 
     visitor_id = users[str(user.id)]["Visited"]
 
@@ -665,10 +667,10 @@ async def devious(ctx):
         return
 
     if visitor_id is not False:
-        await update_stats(visitor_id, 0, "devious", "Received")
-        await update_stats(visitor_id, 0, ctx.author.id, "Giver")
-        await update_stats(ctx.author.id, 0, False, "Visited")
-        await update_stats(visitor_id, 0, False, "Visiting")
+        await playerData.update_stats(visitor_id, 0, "devious", "Received")
+        await playerData.update_stats(visitor_id, 0, ctx.author.id, "Giver")
+        await playerData.update_stats(ctx.author.id, 0, False, "Visited")
+        await playerData.update_stats(visitor_id, 0, False, "Visiting")
         visitor = await client.fetch_user(visitor_id)
 
         # Getting and delivering a gift is blue
@@ -708,20 +710,20 @@ async def unbox(ctx):
             await ctx.channel.send(embed=em_dead)
             return
 
-    await add_player(ctx.author)
+    await playerData.add_player(ctx.author)
     user = ctx.author
-    users = await get_player_data()
+    users = await playerData.get_player_data()
     gift_type = users[str(user.id)]["Received"]
     giver_id = users[str(user.id)]["Giver"]
 
     if gift_type == "nice" and giver_id is not False:
-        await update_stats(ctx.author.id, 1, False, "Total Points")
-        await update_stats(ctx.author.id, 1, False, "Unboxed Points")
-        await update_stats(ctx.author.id, 1, False, "Trashability")
-        await update_stats(ctx.author.id, 0, False, "Received")
-        await update_stats(ctx.author.id, 0, False, "Giver")
-        await update_stats(ctx.author.id, 0, True, "Join")
-        await update_stats(giver_id, 0, True, "Join")
+        await playerData.update_stats(ctx.author.id, 1, False, "Total Points")
+        await playerData.update_stats(ctx.author.id, 1, False, "Unboxed Points")
+        await playerData.update_stats(ctx.author.id, 1, False, "Trashability")
+        await playerData.update_stats(ctx.author.id, 0, False, "Received")
+        await playerData.update_stats(ctx.author.id, 0, False, "Giver")
+        await playerData.update_stats(ctx.author.id, 0, True, "Join")
+        await playerData.update_stats(giver_id, 0, True, "Join")
 
         # earning a point is fuchsia
         em_unbox = discord.Embed(color=discord.Color.fuchsia())
@@ -731,27 +733,27 @@ async def unbox(ctx):
         await ctx.channel.send(embed=em_unbox)
         giver = await client.fetch_user(giver_id)
 
-        await add_high_score(ctx.author)
-        await add_high_score(giver)
-        await update_high_score(ctx.author.id, 1, False, "Old Score")
-        scores = await get_high_score_data()
+        await highscores.add_high_score(ctx.author)
+        await highscores.add_high_score(giver)
+        await highscores.update_high_score(ctx.author.id, 1, False, "Old Score")
+        scores = await highscores.get_high_score_data()
 
         if int(scores[str(ctx.author.id)]["Old Score"]) > int(scores[str(ctx.author.id)]["New Score"]):
             old_score = int(scores[str(ctx.author.id)]["Old Score"])
 
-            await update_high_score(ctx.author.id, old_score, True, "New Score")
+            await highscores.update_high_score(ctx.author.id, old_score, True, "New Score")
 
         return
 
     elif gift_type == "devious" and giver_id is not False:
         giver = await client.fetch_user(giver_id)
-        await update_stats(giver_id, 1, False, "Total Points")
-        await update_stats(giver_id, 1, False, "Kill Points")
-        await update_stats(ctx.author.id, 0, False, "Received")
-        await update_stats(ctx.author.id, 0, False, "Giver")
-        await update_stats(ctx.author.id, 0, True, "Dead")
-        await update_stats(ctx.author.id, 0, True, "Join")
-        await update_stats(giver_id, 0, True, "Join")
+        await playerData.update_stats(giver_id, 1, False, "Total Points")
+        await playerData.update_stats(giver_id, 1, False, "Kill Points")
+        await playerData.update_stats(ctx.author.id, 0, False, "Received")
+        await playerData.update_stats(ctx.author.id, 0, False, "Giver")
+        await playerData.update_stats(ctx.author.id, 0, True, "Dead")
+        await playerData.update_stats(ctx.author.id, 0, True, "Join")
+        await playerData.update_stats(giver_id, 0, True, "Join")
 
         em_bomb = discord.Embed(color=discord.Color.default())
         em_bomb.add_field(name=f"**{ctx.author.name}** unboxed an explosive **devious gift** and **dies!**",
@@ -762,15 +764,15 @@ async def unbox(ctx):
         dead_role = get(ctx.guild.roles, name="Dead")
         await ctx.author.add_roles(dead_role)
 
-        await add_high_score(ctx.author)
-        await add_high_score(giver)
-        await update_high_score(giver.id, 1, False, "Old Score")
-        await update_high_score(ctx.author.id, 1, False, "Deaths")
-        scores = await get_high_score_data()
+        await highscores.add_high_score(ctx.author)
+        await highscores.add_high_score(giver)
+        await highscores.update_high_score(giver.id, 1, False, "Old Score")
+        await highscores.update_high_score(ctx.author.id, 1, False, "Deaths")
+        scores = await highscores.get_high_score_data()
         if int(scores[str(giver.id)]["Old Score"]) > int(scores[str(giver.id)]["New Score"]):
-            await update_high_score(giver.id, int(scores[str(giver.id)]["Old Score"]), True, "New Score")
+            await highscores.update_high_score(giver.id, int(scores[str(giver.id)]["Old Score"]), True, "New Score")
 
-        win = await check_winner()
+        win = await playerData.check_winner()
         if win:
             # final leaderboard is dark gold
             # title, name_list, value_list, status = await make_leaderboard(True)
@@ -834,20 +836,20 @@ async def decline(ctx):
             await ctx.channel.send(embed=em_dead)
             return
 
-    await add_player(ctx.author)
+    await playerData.add_player(ctx.author)
     user = ctx.author
-    users = await get_player_data()
+    users = await playerData.get_player_data()
     gift_type = users[str(user.id)]["Received"]
     giver_id = users[str(user.id)]["Giver"]
 
     if gift_type == "nice" and giver_id is not False:
         giver = await client.fetch_user(giver_id)
-        await update_stats(giver_id, 1, False, "Total Points")
-        await update_stats(giver_id, 1, False, "Declined Points")
-        await update_stats(ctx.author.id, 0, False, "Received")
-        await update_stats(ctx.author.id, 0, False, "Giver")
-        await update_stats(ctx.author.id, 0, True, "Join")
-        await update_stats(giver_id, 0, True, "Join")
+        await playerData.update_stats(giver_id, 1, False, "Total Points")
+        await playerData.update_stats(giver_id, 1, False, "Declined Points")
+        await playerData.update_stats(ctx.author.id, 0, False, "Received")
+        await playerData.update_stats(ctx.author.id, 0, False, "Giver")
+        await playerData.update_stats(ctx.author.id, 0, True, "Join")
+        await playerData.update_stats(giver_id, 0, True, "Join")
 
         # dark gray
         em_decline = discord.Embed(color=discord.Color.default())
@@ -856,22 +858,22 @@ async def decline(ctx):
         em_decline.set_footer(text=f"{ctx.author} declined a gift")
         await ctx.channel.send(embed=em_decline)
 
-        await add_high_score(ctx.author)
-        await add_high_score(giver)
-        await update_high_score(giver_id, 1, False, "Old Score")
-        scores = await get_high_score_data()
+        await highscores.add_high_score(ctx.author)
+        await highscores.add_high_score(giver)
+        await highscores.update_high_score(giver_id, 1, False, "Old Score")
+        scores = await highscores.get_high_score_data()
         if int(scores[str(giver_id)]["Old Score"]) > int(scores[str(giver_id)]["New Score"]):
-            await update_high_score(giver.id, int(scores[str(giver_id)]["Old Score"]), True, "New Score")
+            await highscores.update_high_score(giver.id, int(scores[str(giver_id)]["Old Score"]), True, "New Score")
 
     elif gift_type == "devious" and giver_id is not False:
         giver = await client.fetch_user(giver_id)
-        await update_stats(ctx.author.id, 1, False, "Total Points")
-        await update_stats(ctx.author.id, 1, False, "Accidental Kill")
-        await update_stats(ctx.author.id, 0, False, "Received")
-        await update_stats(ctx.author.id, 0, False, "Giver")
-        await update_stats(giver_id, 0, True, "Dead")
-        await update_stats(ctx.author.id, 0, True, "Join")
-        await update_stats(giver_id, 0, True, "Join")
+        await playerData.update_stats(ctx.author.id, 1, False, "Total Points")
+        await playerData.update_stats(ctx.author.id, 1, False, "Accidental Kill")
+        await playerData.update_stats(ctx.author.id, 0, False, "Received")
+        await playerData.update_stats(ctx.author.id, 0, False, "Giver")
+        await playerData.update_stats(giver_id, 0, True, "Dead")
+        await playerData.update_stats(ctx.author.id, 0, True, "Join")
+        await playerData.update_stats(giver_id, 0, True, "Join")
 
         em_bomb = discord.Embed(color=discord.Color.fuchsia())
         em_bomb.add_field(
@@ -884,15 +886,15 @@ async def decline(ctx):
         dead_role = get(ctx.guild.roles, name="Dead")
         await giver_obj.add_roles(dead_role)
 
-        await add_high_score(ctx.author)
-        await add_high_score(giver)
-        await update_high_score(ctx.author.id, 1, False, "Old Score")
-        await update_high_score(giver_id, 1, False, "Deaths")
-        scores = await get_high_score_data()
+        await highscores.add_high_score(ctx.author)
+        await highscores.add_high_score(giver)
+        await highscores.update_high_score(ctx.author.id, 1, False, "Old Score")
+        await highscores.update_high_score(giver_id, 1, False, "Deaths")
+        scores = await highscores.get_high_score_data()
         if int(scores[str(ctx.author.id)]["Old Score"]) > int(scores[str(ctx.author.id)]["New Score"]):
-            await update_high_score(ctx.author.id, int(scores[str(ctx.author.id)]["Old Score"]), True, "New Score")
+            await highscores.update_high_score(ctx.author.id, int(scores[str(ctx.author.id)]["Old Score"]), True, "New Score")
 
-        win = await check_winner()
+        win = await playerData.check_winner()
         if win:
             # final leaderboard is dark gold
             # title, name_list, value_list, status = await make_leaderboard(True)
@@ -954,9 +956,9 @@ async def trash(ctx):
             await ctx.channel.send(embed=em_dead)
             return
 
-    await add_player(ctx.author)
+    await playerData.add_player(ctx.author)
     user = ctx.author
-    users = await get_player_data()
+    users = await playerData.get_player_data()
     gift_type = users[str(user.id)]["Received"]
     giver_id = users[str(user.id)]["Giver"]
     trash_cap = users[str(user.id)]["Trashability"]
@@ -971,9 +973,9 @@ async def trash(ctx):
     # throwing gift away is teal
     elif trash_cap and giver_id is not False:
         giver = await client.fetch_user(giver_id)
-        await update_stats(ctx.author.id, -1, False, "Trashability")
-        await update_stats(ctx.author.id, 0, False, "Received")
-        await update_stats(ctx.author.id, 0, False, "Giver")
+        await playerData.update_stats(ctx.author.id, -1, False, "Trashability")
+        await playerData.update_stats(ctx.author.id, 0, False, "Received")
+        await playerData.update_stats(ctx.author.id, 0, False, "Giver")
 
         em_trash = discord.Embed(color=discord.Color.green())
         em_trash.add_field(name=f"You threw away {giver.name}'s {gift_type} gift!",
@@ -992,227 +994,4 @@ async def trash(ctx):
         await ctx.channel.send(embed=em_none)
 
 
-async def add_player(user):
-    if user == client.user:
-        return
-    users = await get_player_data()
-    if str(user.id) in users:
-        return False
-    else:
-        users[str(user.id)] = {}
-        users[str(user.id)]["Total Points"] = 0
-        users[str(user.id)]["Unboxed Points"] = 0
-        users[str(user.id)]["Declined Points"] = 0
-        users[str(user.id)]["Kill Points"] = 0
-        users[str(user.id)]["Accidental Kill"] = 0
-        users[str(user.id)]["Trashability"] = 0
-
-        users[str(user.id)]["Visited"] = False
-        users[str(user.id)]["Received"] = False
-        users[str(user.id)]["Visiting"] = False
-        users[str(user.id)]["Giver"] = False
-        users[str(user.id)]["Dead"] = False
-        users[str(user.id)]["Join"] = False
-
-    with open("players.json", "w") as f:
-        json.dump(users, f)
-
-    return True
-
-
-async def reset_data():
-    with open("players.json", "w") as f:
-        f.write("{ \n }")
-
-
-async def get_player_data():
-    with open("players.json", "r") as f:
-        users = json.load(f)
-    return users
-
-
-async def update_stats(user, new_points=0, new_status=None, mode="Total Points"):
-    users = await get_player_data()
-    if new_points:
-        users[str(user)][mode] += new_points
-    elif new_status or new_status is False:
-        users[str(user)][mode] = new_status
-    with open("players.json", "w") as f:
-        json.dump(users, f)
-
-    stat_info = [users[str(user)]["Total Points"],
-                 users[str(user)]["Unboxed Points"],
-                 users[str(user)]["Declined Points"],
-                 users[str(user)]["Kill Points"],
-                 users[str(user)]["Accidental Kill"],
-                 users[str(user)]["Trashability"],
-
-                 users[str(user)]["Visited"],
-                 users[str(user)]["Received"],
-                 users[str(user)]["Visiting"],
-                 users[str(user)]["Giver"],
-                 users[str(user)]["Dead"],
-                 users[str(user)]["Join"]]
-    return stat_info
-
-
-async def add_high_score(user):
-    if user == client.user:
-        return
-
-    score = await get_high_score_data()
-    if str(user.id) in score:
-        return False
-    else:
-        score[str(user.id)] = {}
-        score[str(user.id)]["New Score"] = 0
-        score[str(user.id)]["Old Score"] = 0
-        score[str(user.id)]["Deaths"] = 0
-
-    with open("highscores.json", "w") as f:
-        json.dump(score, f)
-
-    return True
-
-
-async def get_high_score_data():
-    with open("highscores.json", "r") as f:
-        users = json.load(f)
-    return users
-
-
-async def update_high_score(user, add=0, replace=False, mode="High Score"):
-    users = await get_high_score_data()
-    if replace:
-        users[str(user)][mode] = int(add)
-    elif not replace and add:
-        users[str(user)][mode] += add
-    with open("highscores.json", "w") as f:
-        json.dump(users, f)
-
-    high_score_info = [users[str(user)]["New Score"],
-                       users[str(user)]["Old Score"],
-                       users[str(user)]["Deaths"]]
-    return high_score_info
-
-
-async def make_leaderboard(final=False):
-    users = await get_player_data()
-
-    player_list = {}
-    winner_list = []
-    for player_id in users.keys():
-        if users[str(player_id)]["Join"]:
-            player_list[player_id] = users[str(player_id)]["Total Points"]
-
-    sorted_values = sorted(player_list.values())
-    sorted_players = {}
-
-    for i in sorted_values:
-        for k in player_list.keys():
-            if player_list[k] == i:
-                sorted_players[k] = player_list[k]
-
-    for player_id in sorted_players:
-        winner_list.insert(0, player_id)
-
-    title = ""
-
-    if final is False:
-        title = "The Current Leaderboard:"
-
-    elif final is True:
-        title = "The Final Leaderboard:"
-
-    if len(sorted_values) == 0:
-        name = "The Leaderboard is Empty"
-        value = "There are no players playing"
-        status = ":("
-        return title, [name], [value], [status]
-
-    else:
-        name_list = []
-        value_list = []
-        status_list = []
-        for count, winner in enumerate(winner_list, start=1):
-            if count == 11:
-                return title, name_list, value_list, status_list
-            else:
-                player_name = await client.fetch_user(int(winner))
-                name = str(count) + ". " + str(player_name)
-                value = str("Total Points: " + str(users[str(winner)]["Total Points"]))
-                death = users[str(winner)]["Dead"]
-                if death:
-                    death = "Dead"
-                elif not death:
-                    death = "Alive"
-                status = str("`" + death + "`")
-                name_list.append(name)
-                value_list.append(value)
-                status_list.append(status)
-
-        return title, name_list, value_list, status_list
-
-
-async def make_highscores():
-    users = await get_high_score_data()
-
-    player_list = {}
-    winner_list = []
-    for player_id in users.keys():
-        player_list[player_id] = users[str(player_id)]["New Score"]
-
-    sorted_values = sorted(player_list.values())
-    sorted_players = {}
-
-    for i in sorted_values:
-        for k in player_list.keys():
-            if player_list[k] == i:
-                sorted_players[k] = player_list[k]
-
-    for player_id in sorted_players:
-        winner_list.insert(0, player_id)
-
-    if len(sorted_values) == 0:
-        name = "There are No High Scores"
-        value = "No one got a high score yet"
-        status = ":("
-        return [name], [value], [status]
-
-    else:
-        name_list = []
-        value_list = []
-        status_list = []
-        for count, winner in enumerate(winner_list, start=1):
-            if count == 11:
-                return name_list, value_list, status_list
-            else:
-                player_name = await client.fetch_user(int(winner))
-                name = str(count) + ". " + str(player_name)
-                value = str("High Score: " + str(users[str(winner)]["New Score"]))
-                death = str("Deaths: " + str(users[str(winner)]["Deaths"]))
-
-                name_list.append(name)
-                value_list.append(value)
-                status_list.append(death)
-
-        return name_list, value_list, status_list
-
-
-async def check_winner():
-    users = await get_player_data()
-    dead_list = []
-    if len(users) > 1:
-        for user in users:
-            if users[str(user)]["Dead"]:
-                dead_list.append(1)
-            elif not users[str(user)]["Dead"]:
-                dead_list.append(0)
-
-    alive = dead_list.count(0)
-
-    if alive == 1:
-        return True
-
-
-client.run(token.key)
+client.run(tokens.key)

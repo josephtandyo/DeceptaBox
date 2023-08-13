@@ -1,6 +1,6 @@
-channel_ID = 1059322301021171712
-dead_role_ID = 1059212979868016670
+channel_ID = 1057453945754222602
+dead_role_ID = 1139967651435782276
 dead_role_NAME = "DEAD"
-guild_ID = 1057592172381208629
+guild_ID = 1023411810063355955
 
 file_location = "C:\\Users\\josep\\PycharmProjects\\General Discord Bot"
