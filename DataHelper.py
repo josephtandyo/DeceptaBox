@@ -74,25 +74,3 @@ async def check_winner():
 
     if alive == 1:
         return True
-
-
-async def dead_person(role_id, specifics=None):
-    dead_role_id = settings.dead_role_ID
-    role_name = settings.dead_role_NAME
-
-    if role_id == dead_role_id and specifics == "visiting dead":
-        return "The host you tried to visit have **died**, you would be visiting a haunted house"
-    elif role_id == dead_role_id and specifics == "dead visiting":
-        return "You have **died** and cannot haunt anyone"
-    elif role_id == dead_role_id and specifics == "dead home":
-        return "You have **died** and cannot come home"
-    elif role_id == dead_role_id and specifics == "dead unboxing":
-        return "you have **died** and you cannot unbox any gifts"
-    elif role_id == dead_role_id and specifics == "dead declining":
-        return "you have **died** and you cannot decline any gifts"
-    elif role_id == dead_role_id and specifics == "dead trashing":
-        return "you have **died** and you cannot trash any gifts"
-    elif role_id == dead_role_id and specifics == "remove role":
-        return True, role_name
-    elif role_id != dead_role_id and specifics == "remove role":
-        return False, role_name

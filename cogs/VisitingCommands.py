@@ -2,8 +2,10 @@ import discord
 from discord.ext import commands
 
 import DataHelper
+import SendEmbed
 
 
+# cog class for visiting commands (part of guest commands)
 class VisitingCommands(commands.Cog):
     def __init__(self, client):
         self.client = client
@@ -12,239 +14,162 @@ class VisitingCommands(commands.Cog):
     async def on_ready(self):
         print("VisitingCommands is ready")
 
-    # change the timer
+    # !visit @player is a command to allow guests to visit @player
+    # there is a cooldown for this command, as users can visit players every 5 minutes (300 seconds)
     @commands.command(cooldown_after_parsing=True)
-    @commands.cooldown(1, 0, commands.BucketType.user)
+    @commands.cooldown(1, 300, commands.BucketType.user)
     async def visit(self, ctx, member: discord.Member):
-        # !visit is server specific command
-        # Wrong chat is brand red
-        await member.send("bruh")
-        print(member.id)
 
-        msg = await self.client.player_data.wrong_chat(ctx.channel.id, ctx.guild, "Guest")
-        if msg:
-            em_wrong_c = discord.Embed(color=discord.Color.brand_red())
-            em_wrong_c.add_field(name="Wrong Chat", value=msg, inline=True)
-            await ctx.author.send(embed=em_wrong_c)
+        # check if the command is sent in wrong chat
+        # if the results are true, then it was sent in wrong place and return and reset cooldown
+        if await self.client.wrong_chat.check_guest_wc(ctx.channel.id, ctx.guild, ctx.author):
             self.client.get_command("visit").reset_cooldown(ctx)
             return
 
-        # Visiting bot is purple
-        elif member == self.client.user:
-            em_bot_visit = discord.Embed(color=discord.Color.purple())
-            em_bot_visit.add_field(
-                name="Thanks for coming, I have nothing for you though. Try visiting **players**",
-                value="I will teleport you back to where you were")
-            em_bot_visit.set_footer(text=f"{ctx.author} arrived at {self.client.user}'s home")
-            await ctx.author.send(embed=em_bot_visit)
+        # author visiting the bot itself
+        if member == self.client.user:
+            await SendEmbed.send_bot_visit(ctx.author)
             self.client.get_command("visit").reset_cooldown(ctx)
             return
 
+        # add the author and player to players.json
         await self.client.player_data.add_player(ctx.author)
         await self.client.player_data.add_player(member)
 
-        # Checking if player is dead. Role specific.
-        for role in ctx.author.roles:
-            dead_visiting = await DataHelper.dead_person(role.id, "dead visiting")
-            if dead_visiting:
-                em_dead_a = discord.Embed(color=discord.Color.red())
-                em_dead_a.add_field(name="R.I.P", value=dead_visiting, inline=True)
-                em_dead_a.set_footer(text=f"{ctx.author} tried to visit {member}")
-                await ctx.channel.send(embed=em_dead_a)
-                self.client.get_command("visit").reset_cooldown(ctx)
-                return
+        # check if author or player is dead and trying to visit or get visited
+        # if the results are true then author is dead or player visited is dead and return and reset cooldown
+        if await self.client.death_handling.check_death(ctx.channel, ctx.author, member):
+            self.client.get_command("visit").reset_cooldown(ctx)
+            return
 
-        # Checking if player visiting is dead. Role specific.
-        for role in member.roles:
-            visiting_dead = await DataHelper.dead_person(role.id, "visiting dead")
-            if visiting_dead:
-                em_dead_m = discord.Embed(color=discord.Color.red())
-                em_dead_m.add_field(name="R.I.P", value=visiting_dead, inline=True)
-                em_dead_m.set_footer(text=f"{ctx.author} tried to visit {member}")
-                await ctx.channel.send(embed=em_dead_m)
-                self.client.get_command("visit").reset_cooldown(ctx)
-                return
-
-        # Visiting yourself is dark green
+        # author visiting themselves
         if member == ctx.author:
-            em_self = discord.Embed(color=discord.Color.red())
-            em_self.add_field(name="You can't visit yourself!",
-                              value="How is that possible??")
-            em_self.set_footer(text=f"{ctx.author} tried to visit themselves")
-            await ctx.channel.send(embed=em_self)
+            await SendEmbed.send_visit_self(ctx.author, ctx.channel)
             self.client.get_command("visit").reset_cooldown(ctx)
             return
 
-        # Visiting no one is dark green
+        # author visiting no one
         elif member is None:
-            em_none = discord.Embed(color=discord.Color.red())
-            em_none.add_field(name="You have not specified who you are visiting!",
-                              value="To visit a host, type the command and mention the player you want to visit")
-            em_none.set_footer(text=f"{ctx.author} tried to visit no one")
-            await ctx.channel.send(embed=em_none)
+            await SendEmbed.send_visit_no_one(ctx.author, ctx.channel)
             self.client.get_command("visit").reset_cooldown(ctx)
             return
 
+        # get the data of the list of players
         users = await DataHelper.get_player_data()
-        print(users)
 
+        # check inventory, already visiting, someone at home for the author
         inventory_full = users[str(ctx.author.id)]["Received"]
         already_visiting = users[str(ctx.author.id)]["Visiting"]
         guest_at_home = users[str(ctx.author.id)]["Visited"]
+
+        # check guest at player's, player not home for the player
         guest_at_host = users[str(member.id)]["Visited"]
         not_home = users[str(member.id)]["Visiting"]
 
-        print("will this print?")
-
-        # When the player is already at someone else's house, the color is dark green
+        # author is already at someone's house trying to visit again
         if already_visiting:
+
+            # check who it is that author is currently visiting
             user_visiting = await self.client.fetch_user(already_visiting)
+
+            # if author is currently visiting someone else other than the player
             if member != user_visiting:
-                em_else = discord.Embed(color=discord.Color.red())
-                em_else.add_field(name=f"You are already at {user_visiting.name}'s house!",
-                                  value=f"If you want to visit {member.name} instead, you need to go home first")
-                em_else.set_footer(text=f"{ctx.author} tried to visit {member}")
-                await ctx.channel.send(embed=em_else)
+                await SendEmbed.send_v_someone_else(user_visiting, member, ctx.author, ctx.channel)
                 self.client.get_command("visit").reset_cooldown(ctx)
                 return
 
+            # if author is already visiting the player
             elif member == user_visiting:
-                em_here = discord.Embed(color=discord.Color.red())
-                em_here.add_field(name=f"You have arrived at {user_visiting.name}'s house a long time ago!",
-                                  value=f"Wait for {user_visiting.name} to pick a gift for you, or if you don't want to"
-                                        f" wait, "
-                                        f"go home")
-                em_here.set_footer(text=f"{ctx.author} tried to visit {user_visiting}")
-                await ctx.channel.send(embed=em_here)
+                await SendEmbed.send_v_already(member, ctx.author, ctx.channel)
                 self.client.get_command("visit").reset_cooldown(ctx)
                 return
 
-        # When a player is already at their house, the color is dark green
+        # author is trying to visit a player that is being visited by someone else
         elif guest_at_host:
             guest_inside = await self.client.fetch_user(guest_at_host)
-            em_full = discord.Embed(color=discord.Color.red())
-            em_full.add_field(name=f"{member.name}'s house is full, as {guest_inside.name} is already there!",
-                              value=f"Visit {member.name} at a later time or visit somebody else")
-            em_full.set_footer(text=f"{ctx.author} tried to visit {member}")
-            await ctx.channel.send(embed=em_full)
+            await SendEmbed.send_guest_at_host(member, guest_inside, ctx.author, ctx.channel)
             self.client.get_command("visit").reset_cooldown(ctx)
             return
 
+        # author is trying to visit a player, but didn't send their own visitor a gift yet
         elif guest_at_home:
             guest_inside = await self.client.fetch_user(guest_at_home)
-            em_leave = discord.Embed(color=discord.Color.red())
-            em_leave.add_field(name=f"{guest_inside.name} is at your house!",
-                               value=f"Give {guest_inside.name} a gift first before you "
-                                     f"are able to visit {member.name}")
-            em_leave.set_footer(text=f"{ctx.author} tried to visit {member}")
-            await ctx.channel.send(embed=em_leave)
+            await SendEmbed.send_guest_at_home(member, guest_inside, ctx.author, ctx.channel)
             self.client.get_command("visit").reset_cooldown(ctx)
             return
 
+        # author is trying to visit a player that is visiting someone else
         elif not_home:
             host_elsewhere = await self.client.fetch_user(not_home)
-            em_empty = discord.Embed(color=discord.Color.red())
-            em_empty.add_field(name=f"{member.name} is at {host_elsewhere.name}'s house!",
-                               value=f"Wait for {member.name} to return home before visiting {member.name}")
-            em_empty.set_footer(text=f"{ctx.author} tried to visit {member}")
-            await ctx.channel.send(embed=em_empty)
+            await SendEmbed.send_not_home(member, host_elsewhere, ctx.author, ctx.channel)
             self.client.get_command("visit").reset_cooldown(ctx)
             return
 
-        # When you still have a gift in inventory, the color is dark green
+        # author is trying to visit a player, but hasn't opened their previous gift
         elif inventory_full:
-            em_gift = discord.Embed(color=discord.Color.red())
-            em_gift.add_field(name="Your inventory is full!",
-                              value=f"Unbox, decline or trash the previous gift before visiting {member.name}")
-            em_gift.set_footer(text=f"{ctx.author} tried to visit {member}")
-            await ctx.channel.send(embed=em_gift)
+            await SendEmbed.send_full_inventory(member, ctx.author, ctx.channel)
             self.client.get_command("visit").reset_cooldown(ctx)
             return
 
-        # Visiting a valid player is green
+        # author is visiting a valid player
         else:
             await DataHelper.update_stats(member.id, 0, ctx.author.id, "Visited")
             await DataHelper.update_stats(ctx.author.id, 0, member.id, "Visiting")
+            await SendEmbed.send_visiting_player(member, ctx.author, ctx.channel)
 
-            em_host = discord.Embed(color=discord.Color.blue())
-            em_host.add_field(name=f"{ctx.author.name} has come to visit!",
-                              value=f"Choose a `!nice` or a `!devious` gift for {ctx.author.name}")
-            em_host.set_footer(text=f"{ctx.author} arrived at {member}'s home")
-            await member.send(embed=em_host)
-
-            em_guest = discord.Embed(color=discord.Color.green())
-            em_guest.add_field(name=f"You have arrived!",
-                               value=f"Now wait as {member.name} will pick the perfect gift for you...")
-            em_guest.set_footer(text=f"{ctx.author} is waiting for a gift at {member}'s home")
-            await ctx.channel.send(embed=em_guest)
-
+    # !home is for the author to go back home, after visiting a player (if the player takes too long sending gift)
     @commands.command()
     async def home(self, ctx):
-        # !visit is server specific command
-        # Wrong chat is brand red
-        msg = await self.client.player_data.wrong_chat(ctx.channel.id, ctx.guild, "Guest")
-        if msg:
-            em_wrong_c = discord.Embed(color=discord.Color.brand_red())
-            em_wrong_c.add_field(name="Wrong Chat", value=msg, inline=True)
-            await ctx.author.send(embed=em_wrong_c)
+
+        # check if the command is sent in wrong chat
+        # if the results are true, then it was sent in wrong place and return
+        if await self.client.wrong_chat.check_guest_wc(ctx.channel.id, ctx.guild, ctx.author):
             return
 
-        # Checking if player is dead. Role specific.
-        for role in ctx.author.roles:
-            dead_visiting = await DataHelper.dead_person(role.id, "dead home")
-            if dead_visiting:
-                em_dead = discord.Embed(color=discord.Color.red())
-                em_dead.add_field(name="R.I.P", value=dead_visiting, inline=True)
-                em_dead.set_footer(text=f"{ctx.author} tried to go home")
-                await ctx.channel.send(embed=em_dead)
-                self.client.get_command("visit").reset_cooldown(ctx)
-                return
+        # check if author is dead and trying to go home
+        # if the results are true then author is dead and return
+        # (yes pass in author twice, but it doesn't ever matter)
+        if await self.client.death_handling.check_death(ctx.channel, ctx.author, ctx.author):
+            return
 
+        # add author to the players.json file
         await self.client.player_data.add_player(ctx.author)
+
+        # get the players.json file
         users = await DataHelper.get_player_data()
-        gift_type = users[str(ctx.author.id)]["Received"]
-        already_visiting = users[str(ctx.author.id)]["Visiting"]
 
-        # When the player is home, the color is dark green
-        if not already_visiting:
-            em_home = discord.Embed(color=discord.Color.red())
-            em_home.add_field(name="You are already home!",
-                              value="Visit someone first and then you can decide to go home")
-            em_home.set_footer(text=f"{ctx.author} tried to go home")
-            await ctx.channel.send(embed=em_home)
+        # check if gift received and if visiting player
+        received_gift = users[str(ctx.author.id)]["Received"]
+        visiting_player = users[str(ctx.author.id)]["Visiting"]
+
+        # author is not visiting any player (they are already at home)
+        if not visiting_player:
+            await SendEmbed.send_home_already(ctx.author, ctx.channel)
             return
 
-        # When you have a gift in inventory, the color is dark green
-        elif gift_type:
-            em_gift = discord.Embed(color=discord.Color.red())
-            em_gift.add_field(name="The host has given you a gift already!",
-                              value="You cannot leave their house until you unbox, decline or trash the gift")
-            em_gift.set_footer(text=f"{ctx.author} tried to go home")
-            await ctx.channel.send(embed=em_gift)
+        # author tries to go home, but has already received gift
+        elif received_gift:
+            await SendEmbed.send_received_already(ctx.author, ctx.channel)
             return
 
-        # Able to leave
+        # author successfully leaves home
         else:
             for player_id in users.keys():
+                # find the player who author was visiting
                 if int(player_id) == int(users[str(ctx.author.id)]["Visiting"]):
+                    # put player in players.json file if not yet on it
                     member_obj = await self.client.player_data.make_member(int(player_id))
+
+                    # update stats of player and author
                     await DataHelper.update_stats(ctx.author.id, 0, False, "Visiting")
                     await DataHelper.update_stats(member_obj.id, 0, False, "Visited")
 
-                    em_host = discord.Embed(color=discord.Color.blue())
-                    em_host.add_field(name=f"{ctx.author.name} has went home :(",
-                                      value=f"You took too long to give them a gift, "
-                                            f"{ctx.author.name} got tired of waiting")
-                    em_host.set_footer(text=f"{ctx.author} went home")
-                    await member_obj.send(embed=em_host)
+                    await SendEmbed.send_go_home(member_obj, ctx.author, ctx.channel)
 
-                    em_guest = discord.Embed(color=discord.Color.green())
-                    em_guest.add_field(name=f"You have arrived home from {member_obj.name}'s house",
-                                       value=f"You can visit a host")
-                    em_guest.set_footer(text=f"{ctx.author} went home")
-                    await ctx.channel.send(embed=em_guest)
+                    # reset cooldown because cancelled visit
                     self.client.get_command("visit").reset_cooldown(ctx)
 
 
+# cog setup
 async def setup(client):
     await client.add_cog(VisitingCommands(client))

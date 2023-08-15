@@ -59,8 +59,6 @@ class PlayerData(commands.Cog):
             users[str(user.id)]["Dead"] = False
             users[str(user.id)]["Join"] = False
 
-            print(" player added lol ")
-
         with open("players.json", "w") as f:
             json.dump(users, f)
 
@@ -188,8 +186,6 @@ class PlayerData(commands.Cog):
     async def reset(self):
         channel_id = settings.channel_ID
         guid_id = settings.guild_ID
-
-        print("reseted")
 
         # change time
         while True:

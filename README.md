@@ -4,8 +4,19 @@ Grifter's Gift is a Discord Bot game that can be played on Discord with players 
 
 The game is a simple deception game with the main goal being getting as many points possible without dying. When death occurs, it will be permanent!
 
+## How to Use
+put stuff herhehrheh
+you need to change settings to fit your game
+adjust when game resets in settings or what the visit resting time is. The default is 10 minutest. If you have big server, 1 hour i would recomend
+it is reccomended to have the dead role disable player talking in the game specified channel
+
+
+- ### Important Note:
+  EVERY player that wants to play this game on Discord NEEDS to enable this in user settings
+  ![img.png](img.png)
+
 ## Here are the Basic Rules of the Game:
-  1. Every 10 minutes, you may visit other players and act as the guest
+  1. Every few minutes, you may visit other players and act as the guest
 
   2. The player you visited will act as the host
 
@@ -80,7 +91,4 @@ Note:
  - When player dies, a (dead) role is given to them
  - Choose which server channel the game is playable in and commands usable in
  - Every day the leaderboard and game resets for a brand-new game
-
-### Important Note:
-- To be able to play this game on Discord, YOU NEED to enable this in user settings
-![img.png](img.png)
+ - Easter eggs to find
