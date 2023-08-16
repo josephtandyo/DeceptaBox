@@ -5,7 +5,6 @@ from discord.ext import commands
 
 import settings
 import tokens
-from cogs.LeaderboardsHandling import LeaderboardsHandling
 from cogs.PlayerData import PlayerData
 from cogs.WrongChat import WrongChat
 
@@ -20,7 +19,6 @@ client = commands.Bot(command_prefix="!", case_insensitive=True, intents=intents
 #TODO crtl f every cog class to see if the commands are crrect and parametere, THERE IS NO ERROR CHECKING FOR THESE
 client.player_data = PlayerData(client)
 client.wrong_chat = WrongChat(client)
-client.leaderboards_handling = LeaderboardsHandling(client)
 
 # TODO checks to see if their settings have send DM enabled. If not, send a message you need it enabled, send message to guest that player doesnt have it enabled
 # in the add_player method, check

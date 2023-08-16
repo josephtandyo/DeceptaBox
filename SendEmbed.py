@@ -112,39 +112,42 @@ async def send_guide(channel):
     await channel.send(embed=em_commands)
 
 
-async def send_stats(user, total, trashability, nice_amt, accident_amt, decline_amt, kills_amt,
+async def send_stats(user, total_points, trashability_amt, opened_gift_points,
+                     killing_host_points, returned_gift_points, killing_guest_points,
                      author, send_here):
     em_stat = discord.Embed(title=f"{user}'s Stats", color=discord.Color.teal())
     em_stat.add_field(name="General Stats",
                       value="*Overall*\n\n"
                             "**Total Points:**\n"
-                            f"{total}\n\n"
+                            f"{total_points}\n\n"
                             "**Trashability:**\n"
-                            f"{trashability}", inline=True)
+                            f"{trashability_amt}", inline=True)
     em_stat.add_field(name="Guest Stats",
                       value="*Points Gained as a Guest*\n\n"
                             "**Opened Gift Points:**\n"
-                            f"{nice_amt}\n\n"
+                            f"{opened_gift_points}\n\n"
                             "**Killing Hosts Points:**\n"
-                            f"{accident_amt}", inline=True)
+                            f"{killing_host_points}", inline=True)
 
     em_stat.add_field(name="Host Stats",
                       value="*Points Gained as a Host*\n\n"
                             "**Returned Gift Points:**\n"
-                            f"{decline_amt}\n\n"
+                            f"{returned_gift_points}\n\n"
                             "**Killing Guests Points:**\n"
-                            f"{kills_amt}", inline=True)
+                            f"{killing_guest_points}", inline=True)
 
     em_stat.set_footer(text=f"Requested by: {author}")
     await send_here(embed=em_stat)
 
 
-async def send_leaderboards(title, name_list, value_list, status, channel):
-    em_board = discord.Embed(title=title, color=discord.Color.orange())
+async def send_leaderboards(name_list, value_list, status, channel):
+    em_board = discord.Embed(title="Leaderboards", color=discord.Color.orange())
 
     for num in range(len(name_list)):
-        em_board.add_field(name=name_list[num],
-                           value=value_list[num] + " \n" + status[num])
+        standings = str(num + 1)
+
+        em_board.add_field(name=standings + ". " + name_list[num],
+                           value="Total Points: " + str(value_list[num]) + " \n" + "`" + status[num] + "`")
 
     await channel.send(embed=em_board)
 
