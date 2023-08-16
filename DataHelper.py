@@ -1,28 +1,5 @@
 import json
 
-import settings
-
-
-async def get_high_score_data():
-    with open("highscores.json", "r") as f:
-        users = json.load(f)
-    return users
-
-
-async def update_high_score(user, add=0, replace=False, mode="High Score"):
-    users = await get_high_score_data()
-    if replace:
-        users[str(user)][mode] = int(add)
-    elif not replace and add:
-        users[str(user)][mode] += add
-    with open("highscores.json", "w") as f:
-        json.dump(users, f)
-
-    high_score_info = [users[str(user)]["New Score"],
-                       users[str(user)]["Old Score"],
-                       users[str(user)]["Deaths"]]
-    return high_score_info
-
 
 async def get_player_data():
     with open("players.json", "r") as f:
@@ -35,29 +12,10 @@ async def reset_data():
         f.write("{ \n }")
 
 
-async def update_stats(user, new_points=0, new_status=None, mode="Total Points"):
-    users = await get_player_data()
-    if new_points:
-        users[str(user)][mode] += new_points
-    elif new_status or new_status is False:
-        users[str(user)][mode] = new_status
+async def update_data(users):
     with open("players.json", "w") as f:
         json.dump(users, f)
 
-    stat_info = [users[str(user)]["Total Points"],
-                 users[str(user)]["Unboxed Points"],
-                 users[str(user)]["Declined Points"],
-                 users[str(user)]["Kill Points"],
-                 users[str(user)]["Accidental Kill"],
-                 users[str(user)]["Trashability"],
-
-                 users[str(user)]["Visited"],
-                 users[str(user)]["Received"],
-                 users[str(user)]["Visiting"],
-                 users[str(user)]["Giver"],
-                 users[str(user)]["Dead"],
-                 users[str(user)]["Join"]]
-    return stat_info
 
 
 async def check_winner():

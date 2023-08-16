@@ -2,7 +2,7 @@ import discord
 
 
 # wrong chat messages
-async def send_basic_wc(channel, author):
+async def send_basic_wc(author, channel):
     em_wrong_c = discord.Embed(color=discord.Color.brand_red())
     em_wrong_c.add_field(name="Wrong Chat",
                          value=f"You can't use this command in this channel, "
@@ -10,26 +10,33 @@ async def send_basic_wc(channel, author):
     await author.send(embed=em_wrong_c)
 
 
-async def send_guest_wc(channel, author):
+async def send_guest_wc(author, channel):
     em_wrong_c = discord.Embed(color=discord.Color.brand_red())
     em_wrong_c.add_field(name="Wrong Chat", value=f"You can't use this command in this channel or in the DM with the "
                                                   f"bot, only in **#{channel}**", inline=True)
     await author.send(embed=em_wrong_c)
 
 
+async def send_host_wc(author):
+    em_wrong_c = discord.Embed(color=discord.Color.brand_red())
+    em_wrong_c.add_field(name="Wrong Chat", value="Oops, you should use this command only in **DM with the bot** to "
+                                                  "keep the gift contents a secret", inline=True)
+    await author.send(embed=em_wrong_c)
+
+
 # dead players messages
-async def send_author_d(channel, author, player):
+async def send_author_d(author, channel):
     em_dead_a = discord.Embed(color=discord.Color.red())
     em_dead_a.add_field(name="R.I.P", value="You have **died** and can't use this command", inline=True)
-    em_dead_a.set_footer(text=f"{author} tried to visit {player}")
+    em_dead_a.set_footer(text=f"{author} is dead")
     await channel.send(embed=em_dead_a)
 
 
-async def send_player_d(channel, author, player):
+async def send_player_d(player, channel):
     em_dead_a = discord.Embed(color=discord.Color.red())
     em_dead_a.add_field(name="R.I.P", value="The host you tried to visit have **died**, "
                                             "you would be visiting a haunted house", inline=True)
-    em_dead_a.set_footer(text=f"{author} tried to visit {player}")
+    em_dead_a.set_footer(text=f"{player} is dead")
     await channel.send(embed=em_dead_a)
 
 
@@ -153,7 +160,7 @@ async def send_highscores(name_list, value_list, death_list, channel):
 
 
 # visiting commands messages
-async def send_v_someone_else(currently_visiting, player, author, channel):
+async def send_v_someone_else(author, player, channel, currently_visiting):
     em_else = discord.Embed(color=discord.Color.red())
     em_else.add_field(name=f"You are already at {currently_visiting.name}'s house!",
                       value=f"If you want to visit {player.name} instead, you need to go home first")
@@ -161,7 +168,7 @@ async def send_v_someone_else(currently_visiting, player, author, channel):
     await channel.send(embed=em_else)
 
 
-async def send_v_already(player, author, channel):
+async def send_v_already(author, player, channel):
     em_here = discord.Embed(color=discord.Color.red())
     em_here.add_field(name=f"You have arrived at {player.name}'s house a long time ago!",
                       value=f"Wait for {player.name} to pick a gift for you, or if you don't want to"
@@ -171,7 +178,7 @@ async def send_v_already(player, author, channel):
     await channel.send(embed=em_here)
 
 
-async def send_guest_at_host(player, guest, author, channel):
+async def send_guest_at_host(author, player, channel, guest):
     em_full = discord.Embed(color=discord.Color.red())
     em_full.add_field(name=f"{player.name}'s house is full, as {guest.name} is already there!",
                       value=f"Visit {player.name} at a later time or visit somebody else")
@@ -179,7 +186,7 @@ async def send_guest_at_host(player, guest, author, channel):
     await channel.send(embed=em_full)
 
 
-async def send_guest_at_home(player, guest, author, channel):
+async def send_guest_at_home(author, player, channel, guest):
     em_leave = discord.Embed(color=discord.Color.red())
     em_leave.add_field(name=f"{guest.name} is at your house!",
                        value=f"Give {guest.name} a gift first before you "
@@ -188,7 +195,7 @@ async def send_guest_at_home(player, guest, author, channel):
     await channel.send(embed=em_leave)
 
 
-async def send_not_home(player, host, author, channel):
+async def send_not_home(author, player, channel, host):
     em_empty = discord.Embed(color=discord.Color.red())
     em_empty.add_field(name=f"{player.name} is at {host.name}'s house!",
                        value=f"Wait for {player.name} to return home before visiting {player.name}")
@@ -196,7 +203,7 @@ async def send_not_home(player, host, author, channel):
     await channel.send(embed=em_empty)
 
 
-async def send_full_inventory(player, author, channel):
+async def send_full_inventory(author, player, channel):
     em_gift = discord.Embed(color=discord.Color.red())
     em_gift.add_field(name="Your inventory is full!",
                       value=f"Unbox, decline or trash the previous gift before visiting {player.name}")
@@ -204,7 +211,7 @@ async def send_full_inventory(player, author, channel):
     await channel.send(embed=em_gift)
 
 
-async def send_visiting_player(player, author, channel):
+async def send_visiting_player(author, player, channel):
     em_host = discord.Embed(color=discord.Color.blue())
     em_host.add_field(name=f"{author.name} has come to visit!",
                       value=f"Choose a `!nice` or a `!devious` gift for {author.name}")
@@ -234,7 +241,7 @@ async def send_received_already(author, channel):
     await channel.send(embed=em_gift)
 
 
-async def send_go_home(player, author, channel):
+async def send_go_home(author, player, channel):
     em_host = discord.Embed(color=discord.Color.blue())
     em_host.add_field(name=f"{author.name} has went home :(",
                       value=f"You took too long to give them a gift, "
@@ -247,6 +254,92 @@ async def send_go_home(player, author, channel):
                        value=f"You can visit a host")
     em_guest.set_footer(text=f"{author} went home")
     await channel.send(embed=em_guest)
+
+
+# host commands
+async def send_gift_no_one(author):
+    em_no_visit = discord.Embed(color=discord.Color.red())
+    em_no_visit.add_field(name="No one came to visit you yet :(",
+                          value="Just wait a little longer...")
+    em_no_visit.set_footer(text=f"{author} tried to give a gift to no one")
+    await author.send(embed=em_no_visit)
+
+
+async def send_gift(author, visitor):
+    em_guest = discord.Embed(color=discord.Color.blue())
+    em_guest.add_field(name=f"{author.name} has given you a gift!",
+                       value="Unbox, decline or trash it in the server")
+    em_guest.set_footer(text=f"{author} gave a gift to {visitor}")
+
+    await visitor.send(embed=em_guest)
+
+    em_host = discord.Embed(color=discord.Color.green())
+    em_host.add_field(name=f"Package given to {visitor.name}",
+                      value=f"{visitor.name} may unbox, decline or trash it in the server")
+    em_host.set_footer(text=f"{visitor} received a gift from {author}")
+
+    await author.send(embed=em_host)
+
+
+# guest commands
+async def send_udt_nothing(author, channel):
+    em_gift = discord.Embed(color=discord.Color.red())
+    em_gift.add_field(name="Inventory is empty!",
+                      value="You need to `!visit` a player and receive a gift first to use this command")
+    em_gift.set_footer(text=f"{author}'s inventory is empty")
+
+    await channel.send(embed=em_gift)
+
+
+async def send_unbox_nice(author, channel):
+    em_unbox = discord.Embed(color=discord.Color.fuchsia())
+    em_unbox.add_field(name=f"**{author.name}** unboxed a **nice gift!**",
+                       value=f"**{author.name}** receives **1 point** and **1 trashability**")
+    em_unbox.set_footer(text=f"{author} unboxed a gift")
+    await channel.send(embed=em_unbox)
+
+
+async def send_unbox_devious(author, channel, giver):
+    em_bomb = discord.Embed(color=discord.Color.default())
+    em_bomb.add_field(name=f"**{author.name}** unboxed an explosive **devious gift** and **dies!**",
+                      value=f"**{giver.name}** receives **1 point**")
+    em_bomb.set_footer(text=f"{author} unboxed a gift")
+    await channel.send(embed=em_bomb)
+
+
+async def send_decline_nice(author, channel, giver):
+    em_decline = discord.Embed(color=discord.Color.default())
+    em_decline.add_field(name=f"**{author.name}** declined a **nice gift!**",
+                         value=f"**{giver.name}** receives **1 point**")
+    em_decline.set_footer(text=f"{author} declined a gift")
+    await channel.send(embed=em_decline)
+
+
+async def send_decline_devious(author, channel, giver):
+    em_bomb = discord.Embed(color=discord.Color.fuchsia())
+    em_bomb.add_field(
+        name=f"**{author.name}** declined an explosive **devious gift** and receives **1 point**!",
+        value=f"**{giver.name}** receives a bomb and **dies**")
+    em_bomb.set_footer(text=f"{author} declined a gift")
+    await channel.send(embed=em_bomb)
+
+
+async def send_trashed_gift(author, channel, giver, gift_type):
+    em_trash = discord.Embed(color=discord.Color.green())
+    em_trash.add_field(name=f"You threw away {giver.name}'s {gift_type} gift!",
+                       value=f"**Trashability** decreased by 1")
+    em_trash.set_footer(text=f"{author} trashed a gift")
+    await channel.send(embed=em_trash)
+
+
+async def send_no_trashability(author, channel, giver):
+    em_none = discord.Embed(color=discord.Color.red())
+    em_none.add_field(name=f"Not enough **trashability** to throw away {giver.name}'s gift!",
+                      value="You need at least **1 trashability** which can be gained from unboxing **nice "
+                            "gifts**")
+    em_none.set_footer(text=f"{author} tried to trash a gift")
+
+    await channel.send(embed=em_none)
 
 
 # Easter Egg messages

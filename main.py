@@ -6,6 +6,7 @@ from discord.ext import commands
 import settings
 import tokens
 from cogs.DeathHandling import DeathHandling
+from cogs.LeaderboardsHandling import LeaderboardsHandling
 from cogs.PlayerData import PlayerData
 from cogs.WrongChat import WrongChat
 
@@ -20,12 +21,14 @@ client = commands.Bot(command_prefix="!", case_insensitive=True, intents=intents
 #TODO crtl f every cog class to see if the commands are crrect and parametere, THERE IS NO ERROR CHECKING FOR THESE
 client.player_data = PlayerData(client)
 client.wrong_chat = WrongChat(client)
-client.death_handling = DeathHandling(client)
+client.leaderboards_handling = LeaderboardsHandling(client)
 
 # TODO checks to see if their settings have send DM enabled. If not, send a message you need it enabled, send message to guest that player doesnt have it enabled
 # in the add_player method, check
 # TODO some of the embeds say "author" but change this to author.name
 #TODO rename some vairable names... some of these are atrocius
+# TODO figure out github pycache and test.py in cogs CONSISTENT VARIABLE NAMES. instead of member or player, guest and host put server link in dm bot so its faster to go to server
+# TODO split player data and data helper evven more. remember each class should do its own thing
 @client.event
 async def on_ready():
     print("Ready")

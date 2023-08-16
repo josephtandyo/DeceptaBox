@@ -3,4 +3,4 @@ tokens.py
 /__pycache__
 img.png
 test.py
-cogs/__pycache__
+/cogs/__pycache__

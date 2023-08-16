@@ -29,7 +29,7 @@ class PlayerData(commands.Cog):
             em_tired.set_footer(text="To check how much time until the next visit, visit the bot in the DM")
             await ctx.channel.send(embed=em_tired)
 
-    async def make_member(self, player_id):
+    async def convert_to_obj(self, player_id):
         guild_id = settings.guild_ID
 
         guild_obj = self.client.get_guild(guild_id)
@@ -63,125 +63,6 @@ class PlayerData(commands.Cog):
             json.dump(users, f)
 
         return True
-
-    async def make_leaderboard(self, final=False):
-        users = await DataHelper.get_player_data()
-
-        player_list = {}
-        winner_list = []
-        for player_id in users.keys():
-            if users[str(player_id)]["Join"]:
-                player_list[player_id] = users[str(player_id)]["Total Points"]
-
-        sorted_values = sorted(player_list.values())
-        sorted_players = {}
-
-        for i in sorted_values:
-            for k in player_list.keys():
-                if player_list[k] == i:
-                    sorted_players[k] = player_list[k]
-
-        for player_id in sorted_players:
-            winner_list.insert(0, player_id)
-
-        title = ""
-
-        if final is False:
-            title = "The Current Leaderboard:"
-
-        elif final is True:
-            title = "The Final Leaderboard:"
-
-        if len(sorted_values) == 0:
-            name = "The Leaderboard is Empty"
-            value = "There are no players playing"
-            status = ":("
-            return title, [name], [value], [status]
-
-        else:
-            name_list = []
-            value_list = []
-            status_list = []
-            for count, winner in enumerate(winner_list, start=1):
-                if count == 11:
-                    return title, name_list, value_list, status_list
-                else:
-                    player_name = await self.client.fetch_user(int(winner))
-                    name = str(count) + ". " + str(player_name)
-                    value = str("Total Points: " + str(users[str(winner)]["Total Points"]))
-                    death = users[str(winner)]["Dead"]
-                    if death:
-                        death = "Dead"
-                    elif not death:
-                        death = "Alive"
-                    status = str("`" + death + "`")
-                    name_list.append(name)
-                    value_list.append(value)
-                    status_list.append(status)
-
-            return title, name_list, value_list, status_list
-
-    async def add_high_score(self, user):
-        if user == self.client.user:
-            return
-
-        score = await DataHelper.get_high_score_data()
-        if str(user.id) in score:
-            return False
-        else:
-            score[str(user.id)] = {}
-            score[str(user.id)]["New Score"] = 0
-            score[str(user.id)]["Old Score"] = 0
-            score[str(user.id)]["Deaths"] = 0
-
-        with open("../highscores.json", "w") as f:
-            json.dump(score, f)
-
-        return True
-
-    async def make_highscores(self):
-        users = await DataHelper.get_high_score_data()
-
-        player_list = {}
-        winner_list = []
-        for player_id in users.keys():
-            player_list[player_id] = users[str(player_id)]["New Score"]
-
-        sorted_values = sorted(player_list.values())
-        sorted_players = {}
-
-        for i in sorted_values:
-            for k in player_list.keys():
-                if player_list[k] == i:
-                    sorted_players[k] = player_list[k]
-
-        for player_id in sorted_players:
-            winner_list.insert(0, player_id)
-
-        if len(sorted_values) == 0:
-            name = "There are No High Scores"
-            value = "No one got a high score yet"
-            status = ":("
-            return [name], [value], [status]
-
-        else:
-            name_list = []
-            value_list = []
-            status_list = []
-            for count, winner in enumerate(winner_list, start=1):
-                if count == 11:
-                    return name_list, value_list, status_list
-                else:
-                    player_name = await self.client.fetch_user(int(winner))
-                    name = str(count) + ". " + str(player_name)
-                    value = str("High Score: " + str(users[str(winner)]["New Score"]))
-                    death = str("Deaths: " + str(users[str(winner)]["Deaths"]))
-
-                    name_list.append(name)
-                    value_list.append(value)
-                    status_list.append(death)
-
-            return name_list, value_list, status_list
 
     async def reset(self):
         channel_id = settings.channel_ID
@@ -234,25 +115,6 @@ class PlayerData(commands.Cog):
                 for user_id in scores.keys():
                     await DataHelper.update_high_score(user_id, 0, True, "Old Score")
                 # client.get_command("visit").reset_cooldown(ctx)
-
-    async def wrong_chat(self, channel_id, in_server, command_type):
-        desired_channel_id = settings.channel_ID
-
-        channel = await self.client.fetch_channel(desired_channel_id)
-        # when wrong channel and not in dm
-        if channel_id != desired_channel_id and in_server is not None and command_type == "Basic":
-            return f"You can't use this command in this channel, only in **#{channel}** or in **DM with the bot**"
-
-        # when wrong channel or in dm
-        elif (channel_id != desired_channel_id or in_server is None) and command_type == "Guest":
-            return f"You can't use this command in this channel or in the DM with the bot, only in **#{channel}**"
-
-        # when not in dm
-        elif channel_id == desired_channel_id and in_server is not None and command_type == "Host":
-            return "Oops, you should use this command only in **DM with the bot** to keep the gift contents a secret"
-
-        elif channel_id != desired_channel_id and in_server is not None and command_type == "Host":
-            return f"You can't use this command in this channel, only in **DM with the bot**"
 
 
 async def setup(client):

@@ -1,7 +1,7 @@
 from discord.ext import commands
-
 import SendEmbed
 import settings
+# STATUS: FINISHED
 
 
 class WrongChat(commands.Cog):
@@ -13,47 +13,37 @@ class WrongChat(commands.Cog):
     async def on_ready(self):
         print("WrongChat Cog is ready")
 
-    # check
-    async def check_basic_wc(self, channel_id, in_server, author):
+    # check basic commands if sent in wrong chat
+    async def check_basic_wc(self, author, channel_id, server):
+        # get the channel that is desired
         channel = await self.client.fetch_channel(settings.channel_ID)
 
-        # when wrong channel and not in dm
-        if channel_id != settings.channel_ID and in_server is not None:
-            await SendEmbed.send_basic_wc(channel, author)
+        # basic commands are in wrong chat if it's the wrong channel, and it's in the server
+        if channel_id != settings.channel_ID and server is not None:
+            await SendEmbed.send_basic_wc(author, channel)
             return True
-
         return False
 
-    async def check_guest_wc(self, channel_id, in_server, author):
+    # check guest commands if sent in wrong chat
+    async def check_guest_wc(self, author, channel_id, server):
         channel = await self.client.fetch_channel(settings.channel_ID)
 
-        if channel_id != settings.channel_ID or in_server is None:
+        # guest commands are in wrong chat if it's the wrong channel, and it's not in the server
+        if channel_id != settings.channel_ID or server is None:
             await SendEmbed.send_guest_wc(channel, author)
             return True
         return False
 
 
- # TODO delete below
-    async def wrong_chat(self, channel_id, in_server, command_type):
-        desired_channel_id = settings.channel_ID
-
-        channel = await self.client.fetch_channel(desired_channel_id)
-
-        # when wrong channel and not in dm
-        if channel_id != desired_channel_id and in_server is not None and command_type == "Basic":
-            return f"You can't use this command in this channel, only in **#{channel}** or in **DM with the bot**"
-
-        # when wrong channel or in dm
-        elif (channel_id != desired_channel_id or in_server is None) and command_type == "Guest":
-            return f"You can't use this command in this channel or in the DM with the bot, only in **#{channel}**"
-
-        # when not in dm
-        elif channel_id == desired_channel_id and in_server is not None and command_type == "Host":
-            return "Oops, you should use this command only in **DM with the bot** to keep the gift contents a secret"
-
-        elif channel_id != desired_channel_id and in_server is not None and command_type == "Host":
-            return f"You can't use this command in this channel, only in **DM with the bot**"
+# check host commands if sent in wrong chat
+async def check_host_wc(author, server):
+    # host commands are in wrong chat if it's in the server
+    if server is not None:
+        await SendEmbed.send_host_wc(author)
+        return True
+    return False
 
 
+# cog set up
 async def setup(client):
     await client.add_cog(WrongChat(client))
