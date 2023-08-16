@@ -5,7 +5,6 @@ from discord.ext import commands
 
 import settings
 import tokens
-from cogs.DeathHandling import DeathHandling
 from cogs.LeaderboardsHandling import LeaderboardsHandling
 from cogs.PlayerData import PlayerData
 from cogs.WrongChat import WrongChat

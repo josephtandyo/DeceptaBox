@@ -1,12 +1,5 @@
-import asyncio
-
 from discord.ext import commands
-import json
 import DataHelper
-import settings
-import discord
-import datetime
-from discord.utils import get
 
 
 class LeaderboardsHandling(commands.Cog):

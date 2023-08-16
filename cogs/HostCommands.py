@@ -1,9 +1,9 @@
 from discord.ext import commands
 import GetSetStats
 import SendEmbed
-
-
 # STATUS: FINISHED
+
+
 # cog class for host commands
 class HostCommands(commands.Cog):
     def __init__(self, client):
