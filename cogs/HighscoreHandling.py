@@ -1,105 +1,75 @@
-import asyncio
-
 from discord.ext import commands
-import json
 import DataHelper
-import settings
-import discord
-import datetime
-from discord.utils import get
+import GetSetHighscores
+import SendEmbed
 
 
 class HighscoreHandling(commands.Cog):
     def __init__(self, client):
         self.client = client
+        self.sorted_top_users_id = []
+        self.hs_name_list = []
+        self.hs_points_list = []
+        self.hs_deaths_list = []
 
     @commands.Cog.listener()
     async def on_ready(self):
         print("HighscoreHandling Cog is ready")
 
-    async def add_high_score(self, user):
+    async def sort_highscores(self):
+        users = await DataHelper.get_highscore_data()
+        top_users_dict = {}
+        counter = 0
+        for user_id in users.keys():
+            user_point = await GetSetHighscores.get_score(user_id, "High Score")
+            if user_point == 0:
+                continue
+
+            # only get the top 10
+            elif counter != 10:
+                # make a dictionary in the form like: {723832: 4} where the key is the ID and value is total points
+                top_users_dict[user_id] = user_point
+                counter += 1
+
+        # now sort this dictionary by their total points and save the sorted player IDs
+        self.sorted_top_users_id = sorted(top_users_dict, key=top_users_dict.get, reverse=True)
+
+    async def sort_users_hs(self):
+        await self.sort_highscores()
+
+        # for every id in the sorted id list, convert it to a name and append to a name list
+        for user_id in self.sorted_top_users_id:
+            user_name = await self.client.fetch_user(user_id)
+            self.hs_name_list.append(user_name)
+
+            # get the total points value and append it to a points list
+            points = await GetSetHighscores.get_score(user_id, "High Score")
+            self.hs_points_list.append(points)
+
+            # get the death status and append it to a status list
+            death_amount = await GetSetHighscores.get_score(user_id, "Deaths")
+            self.hs_deaths_list.append(death_amount)
+
+    async def send_highscores(self, channel):
+        await self.sort_users_hs()
+        # send the leaderboards
+        await SendEmbed.send_highscores(self.hs_name_list, self.hs_points_list, self.hs_deaths_list, channel)
+
+    async def add_highscore(self, user):
         if user == self.client.user:
             return
 
-        score = await DataHelper.get_high_score_data()
+        score = await DataHelper.get_highscore_data()
         if str(user.id) in score:
             return False
         else:
             score[str(user.id)] = {}
-            score[str(user.id)]["New Score"] = 0
-            score[str(user.id)]["Old Score"] = 0
+            score[str(user.id)]["High Score"] = 0
             score[str(user.id)]["Deaths"] = 0
 
-        with open("../highscores.json", "w") as f:
-            json.dump(score, f)
+        await DataHelper.update_highscore_data(score)
 
         return True
-
-    async def make_highscores(self):
-        users = await DataHelper.get_high_score_data()
-
-        player_list = {}
-        winner_list = []
-        for player_id in users.keys():
-            player_list[player_id] = users[str(player_id)]["New Score"]
-
-        sorted_values = sorted(player_list.values())
-        sorted_players = {}
-
-        for i in sorted_values:
-            for k in player_list.keys():
-                if player_list[k] == i:
-                    sorted_players[k] = player_list[k]
-
-        for player_id in sorted_players:
-            winner_list.insert(0, player_id)
-
-        if len(sorted_values) == 0:
-            name = "There are No High Scores"
-            value = "No one got a high score yet"
-            status = ":("
-            return [name], [value], [status]
-
-        else:
-            name_list = []
-            value_list = []
-            status_list = []
-            for count, winner in enumerate(winner_list, start=1):
-                if count == 11:
-                    return name_list, value_list, status_list
-                else:
-                    player_name = await self.client.fetch_user(int(winner))
-                    name = str(count) + ". " + str(player_name)
-                    value = str("High Score: " + str(users[str(winner)]["New Score"]))
-                    death = str("Deaths: " + str(users[str(winner)]["Deaths"]))
-
-                    name_list.append(name)
-                    value_list.append(value)
-                    status_list.append(death)
-
-            return name_list, value_list, status_list
-
-
-async def get_high_score_data():
-    with open("highscores.json", "r") as f:
-        users = json.load(f)
-    return users
-
-
-async def update_high_score(user, add=0, replace=False, mode="High Score"):
-    users = await get_high_score_data()
-    if replace:
-        users[str(user)][mode] = int(add)
-    elif not replace and add:
-        users[str(user)][mode] += add
-    with open("highscores.json", "w") as f:
-        json.dump(users, f)
-
-    high_score_info = [users[str(user)]["New Score"],
-                       users[str(user)]["Old Score"],
-                       users[str(user)]["Deaths"]]
-    return high_score_info
-
 
 
 async def setup(client):

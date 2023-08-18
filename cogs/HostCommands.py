@@ -1,9 +1,9 @@
 from discord.ext import commands
 import GetSetStats
 import SendEmbed
+
+
 # STATUS: FINISHED
-
-
 # cog class for host commands
 class HostCommands(commands.Cog):
     def __init__(self, client):
@@ -26,30 +26,39 @@ class HostCommands(commands.Cog):
     # general_host is a template for the host command since !devious and !nice does the same thing except the gifts
     async def general_host(self, ctx, gift_type):
         author = ctx.author
+        channel = ctx.channel
         server = ctx.guild
 
         # add the author to players.json
-        await self.client.player_data.add_player(author)
+        await self.client.leaderboards_handling.add_player(author)
+
         # check the player that visited author
-        visitors_id = GetSetStats.get_stat(author.id, "Visited")
+        visitors_id = await GetSetStats.get_stat(author.id, "Visited")
+        # when author has no visitor
+        if visitors_id is False:
+            await SendEmbed.send_gift_no_one(author)
+            return
+        # get the player visiting
+        player = await self.client.fetch_user(visitors_id)
+
+        # check to see if author and player can be DMs
+        if await self.client.player_data.cant_dm_user(channel):
+            await SendEmbed.send_cant_dm_author(author)
+
+        if await self.client.player_data.cant_dm_user(player):
+            await SendEmbed.send_cant_dm_player(player, channel)
+
+
 
         # check if the command is sent in the server
         # return if sent in the server
         if await self.client.wrong_chat.check_host_wc(author, server):
             return
 
-        # when author has no visitor
-        if visitors_id is False:
-            await SendEmbed.send_gift_no_one(author)
-            return
-
         # when author has a visitor
         if visitors_id is not False:
             # update the information with the fact that author gave a gift
             await GetSetStats.update_giving_gift_stats(author.id, visitors_id, gift_type)
-
-            # get the player visiting
-            player = await self.client.fetch_user(visitors_id)
 
             # send the message to author and visitor player
             await SendEmbed.send_gift(author, player)

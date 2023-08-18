@@ -1,19 +1,36 @@
 import discord
 
 
+# message dm privacy settings disabled messages
+async def send_cant_dm_author(channel):
+    em_wrong_c = discord.Embed(color=discord.Color.brand_red())
+    em_wrong_c.add_field(name="You Can't Play the Game",
+                         value=f"Please enable `Allow direct messages from server members` in your privacy and safety "
+                               f"settings", inline=True)
+    await channel.send(embed=em_wrong_c)
+
+
+async def send_cant_dm_player(player, channel):
+    em_wrong_c = discord.Embed(color=discord.Color.brand_red())
+    em_wrong_c.add_field(name=f"{player} Can't Play the Game",
+                         value=f"{player} needs to enable `Allow direct messages from server members` in their "
+                               f"privacy and safety settings", inline=True)
+    await channel.send(embed=em_wrong_c)
+
+
 # wrong chat messages
 async def send_basic_wc(author, channel):
     em_wrong_c = discord.Embed(color=discord.Color.brand_red())
     em_wrong_c.add_field(name="Wrong Chat",
                          value=f"You can't use this command in this channel, "
-                               f"only in **#{channel}** or in **DM with the bot**", inline=True)
+                               f"only in **#{channel} in the server** or in **DM with the bot**", inline=True)
     await author.send(embed=em_wrong_c)
 
 
 async def send_guest_wc(author, channel):
     em_wrong_c = discord.Embed(color=discord.Color.brand_red())
     em_wrong_c.add_field(name="Wrong Chat", value=f"You can't use this command in this channel or in the DM with the "
-                                                  f"bot, only in **#{channel}**", inline=True)
+                                                  f"bot, only in **#{channel} in the server**", inline=True)
     await author.send(embed=em_wrong_c)
 
 
@@ -114,7 +131,7 @@ async def send_guide(channel):
 
 async def send_stats(user, total_points, trashability_amt, opened_gift_points,
                      killing_host_points, returned_gift_points, killing_guest_points,
-                     author, send_here):
+                     author, channel):
     em_stat = discord.Embed(title=f"{user}'s Stats", color=discord.Color.teal())
     em_stat.add_field(name="General Stats",
                       value="*Overall*\n\n"
@@ -137,27 +154,41 @@ async def send_stats(user, total_points, trashability_amt, opened_gift_points,
                             f"{killing_guest_points}", inline=True)
 
     em_stat.set_footer(text=f"Requested by: {author}")
-    await send_here(embed=em_stat)
+    await channel.send(embed=em_stat)
 
 
-async def send_leaderboards(name_list, value_list, status, channel):
-    em_board = discord.Embed(title="Leaderboards", color=discord.Color.orange())
+async def send_leaderboards(name_list, value_list, status_list, channel):
+    em_board = discord.Embed(title="Leaderboards Top 10", color=discord.Color.orange())
 
     for num in range(len(name_list)):
         standings = str(num + 1)
 
-        em_board.add_field(name=standings + ". " + name_list[num],
-                           value="Total Points: " + str(value_list[num]) + " \n" + "`" + status[num] + "`")
+        em_board.add_field(name=f"{standings}. {str(name_list[num])}",
+                           value=f"Total Points: {str(value_list[num])}  \n `{status_list[num]}`")
+
+    em_board.set_footer(text=f"Get at least one point to get on leaderboards!")
 
     await channel.send(embed=em_board)
 
 
+async def send_empty_leaderboards(channel):
+    em_empty_board = discord.Embed(title="The Current Game Leaderboard is Empty", color=discord.Color.orange())
+
+    em_empty_board.add_field(name="No player got a point yet",
+                             value="Get at least one point to get on leaderboards!")
+
+    await channel.send(embed=em_empty_board)
+
+
 async def send_highscores(name_list, value_list, death_list, channel):
-    em_board = discord.Embed(title="The Current High Scores: ", color=discord.Color.orange())
+    em_board = discord.Embed(title="Highscores Top 10: ", color=discord.Color.orange())
 
     for num in range(len(name_list)):
-        em_board.add_field(name=name_list[num],
-                           value=value_list[num] + " \n" + death_list[num])
+        standings = str(num + 1)
+        em_board.add_field(name=f"{standings}. {str(name_list[num])}",
+                           value=f"Total Points: {str(value_list[num])}  \n Deaths: {death_list[num]}")
+
+        em_board.set_footer(text=f"Highscores are permanent and will be shown across servers!")
 
     await channel.send(embed=em_board)
 
@@ -346,11 +377,11 @@ async def send_no_trashability(author, channel, giver):
 
 
 # Easter Egg messages
-async def send_bot_stats(author, send_here):
+async def send_bot_stats(author, channel):
     em_bot_stat = discord.Embed(title="Present Delivery Bot's Stats", color=discord.Color.purple())
     em_bot_stat.add_field(name="Total Points", value=999)
     em_bot_stat.set_footer(text=f"{author} has found an easter egg")
-    await send_here(embed=em_bot_stat)
+    await channel.send(embed=em_bot_stat)
 
 
 async def send_bot_visit(author):
@@ -363,7 +394,7 @@ async def send_bot_visit(author):
 
 
 async def send_visit_self(author, channel):
-    em_self = discord.Embed(color=discord.Color.red())
+    em_self = discord.Embed(color=discord.Color.purple())
     em_self.add_field(name="You can't visit yourself!",
                       value="How is that possible??")
     em_self.set_footer(text=f"{author} has found an easter egg")
@@ -371,7 +402,7 @@ async def send_visit_self(author, channel):
 
 
 async def send_visit_no_one(author, channel):
-    em_none = discord.Embed(color=discord.Color.red())
+    em_none = discord.Embed(color=discord.Color.purple())
     em_none.add_field(name="You have not specified who you are visiting!",
                       value="To visit a host, type the command and mention the player you want to visit")
     em_none.set_footer(text=f"{author} has found an easter egg")

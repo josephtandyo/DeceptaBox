@@ -1,6 +1,8 @@
 from discord.ext import commands
 import SendEmbed
 import settings
+
+
 # STATUS: FINISHED
 
 
@@ -15,10 +17,9 @@ class WrongChat(commands.Cog):
 
     # check basic commands if sent in wrong chat
     async def check_basic_wc(self, author, channel_id, server):
-        # get the channel that is desired
         channel = await self.client.fetch_channel(settings.channel_ID)
-
-        # basic commands are in wrong chat if it's the wrong channel, and it's in the server
+        # basic commands can't be said in the wrong channel
+        # Can be said in DM and the right channel
         if channel_id != settings.channel_ID and server is not None:
             await SendEmbed.send_basic_wc(author, channel)
             return True
@@ -27,17 +28,17 @@ class WrongChat(commands.Cog):
     # check guest commands if sent in wrong chat
     async def check_guest_wc(self, author, channel_id, server):
         channel = await self.client.fetch_channel(settings.channel_ID)
-
-        # guest commands are in wrong chat if it's the wrong channel, and it's not in the server
+        # guest commands can't be said in the wrong channel or DMs
+        # Can be said in the right channel
         if channel_id != settings.channel_ID or server is None:
-            await SendEmbed.send_guest_wc(channel, author)
+            await SendEmbed.send_guest_wc(author, channel)
             return True
         return False
 
 
 # check host commands if sent in wrong chat
 async def check_host_wc(author, server):
-    # host commands are in wrong chat if it's in the server
+    # host commands can't be said in the server
     if server is not None:
         await SendEmbed.send_host_wc(author)
         return True

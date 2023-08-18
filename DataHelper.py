@@ -7,28 +7,22 @@ async def get_player_data():
     return users
 
 
-async def reset_data():
-    with open("players.json", "w") as f:
-        f.write("{ \n }")
-
-
-async def update_data(users):
+async def update_player_data(users):
     with open("players.json", "w") as f:
         json.dump(users, f)
 
 
+async def reset_player_data():
+    with open("players.json", "w") as f:
+        f.write("{ \n }")
 
-async def check_winner():
-    users = await get_player_data()
-    dead_list = []
-    if len(users) > 1:
-        for user in users:
-            if users[str(user)]["Dead"]:
-                dead_list.append(1)
-            elif not users[str(user)]["Dead"]:
-                dead_list.append(0)
 
-    alive = dead_list.count(0)
+async def get_highscore_data():
+    with open("highscores.json", "r") as f:
+        users = json.load(f)
+    return users
 
-    if alive == 1:
-        return True
+
+async def update_highscore_data(users):
+    with open("players.json", "w") as f:
+        json.dump(users, f)

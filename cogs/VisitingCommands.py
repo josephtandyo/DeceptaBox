@@ -2,9 +2,10 @@ import discord
 from discord.ext import commands
 import GetSetStats
 import SendEmbed
+import settings
+
+
 # STATUS: FINISHED
-
-
 # cog class for visiting commands (part of guest commands)
 class VisitingCommands(commands.Cog):
     def __init__(self, client):
@@ -17,11 +18,17 @@ class VisitingCommands(commands.Cog):
     # !visit @player is a command to allow guests to visit @player
     # there is a cooldown for this command, as users can visit players every 5 minutes (300 seconds)
     @commands.command(cooldown_after_parsing=True)
-    @commands.cooldown(1, 300, commands.BucketType.user)
+    @commands.cooldown(1, settings.cooldown_time, commands.BucketType.user)
     async def visit(self, ctx, player: discord.Member):
         author = ctx.author
         channel = ctx.channel
         server = ctx.guild
+        # check to see if author and player can be DMs
+        if await self.client.player_data.cant_dm_user(author):
+            await SendEmbed.send_cant_dm_author(channel)
+
+        if await self.client.player_data.cant_dm_user(player):
+            await SendEmbed.send_cant_dm_player(player, channel)
 
         # check if the command is sent in wrong chat
         # if the results are true, then it was sent in wrong place and return and reset cooldown
@@ -36,17 +43,17 @@ class VisitingCommands(commands.Cog):
             return
 
         # add the author and player to players.json
-        await self.client.player_data.add_player(author)
-        await self.client.player_data.add_player(player)
+        await self.client.leaderboards_handling.add_player(author)
+        await self.client.leaderboards_handling.add_player(player)
 
         # check if author is dead and trying to visit
         # if the results are true then author is dead and return and reset cooldown
-        if await GetSetStats.get_stat(author, "Dead"):
+        if await GetSetStats.get_stat(author.id, "Dead"):
             self.client.get_command("visit").reset_cooldown(ctx)
             await SendEmbed.send_author_d(author, channel)
             return
         # check if player is dead and trying to get visited
-        if await GetSetStats.get_stat(player, "Dead"):
+        if await GetSetStats.get_stat(player.id, "Dead"):
             self.client.get_command("visit").reset_cooldown(ctx)
             await SendEmbed.send_player_d(player, channel)
             return
@@ -64,15 +71,15 @@ class VisitingCommands(commands.Cog):
             return
 
         # check if author is already visiting
-        already_visiting = GetSetStats.get_stat(author.id, "Visiting")
+        already_visiting = await GetSetStats.get_stat(author.id, "Visiting")
         # check if there's a guest in player's home
-        guest_at_players = GetSetStats.get_stat(player.id, "Visited")
+        guest_at_players = await GetSetStats.get_stat(player.id, "Visited")
         # check if there's a player in author's home
-        guest_at_authors = GetSetStats.get_stat(author.id, "Visited")
+        guest_at_authors = await GetSetStats.get_stat(author.id, "Visited")
         # check if the player is visiting a different host
-        player_not_home = GetSetStats.get_stat(player.id, "Visiting")
+        player_not_home = await GetSetStats.get_stat(player.id, "Visiting")
         # check if there's a gift in author's inventory
-        inventory_full = GetSetStats.get_stat(author.id, "Received")
+        inventory_full = await GetSetStats.get_stat(author.id, "Received")
 
         # author is already at a player's house trying to visit again
         if already_visiting:
@@ -139,20 +146,19 @@ class VisitingCommands(commands.Cog):
 
         # check if author is dead and trying to go home
         # if the results are true then author is dead and return
-        if await GetSetStats.get_stat(author, "Dead"):
+        if await GetSetStats.get_stat(author.id, "Dead"):
             await SendEmbed.send_author_d(author, channel)
             return
 
         # add author to the players.json file
-        await self.client.player_data.add_player(author)
-
+        await self.client.leaderboards_handling.add_player(author)
         # check if visiting player
-        visiting_player = GetSetStats.get_stat(author.id, "Visiting")
+        visiting_player_id = await GetSetStats.get_stat(author.id, "Visiting")
         # check if received gift
-        received_gift = GetSetStats.get_stat(author.id, "Received")
+        received_gift = await GetSetStats.get_stat(author.id, "Received")
 
         # author is not visiting any player (they are already at home)
-        if not visiting_player:
+        if not visiting_player_id:
             await SendEmbed.send_home_already(author, channel)
             return
 
@@ -163,7 +169,8 @@ class VisitingCommands(commands.Cog):
 
         # author successfully leaves home
         else:
-            player = await self.client.player_data.convert_to_obj(visiting_player)
+
+            player = await self.client.fetch_user(visiting_player_id)
             # set the new stats
             await GetSetStats.update_successful_home_stats(author.id, player.id)
             # send message

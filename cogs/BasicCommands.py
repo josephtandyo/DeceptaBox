@@ -1,11 +1,10 @@
 import discord
 from discord.ext import commands
-
 import GetSetStats
-import LeaderboardsHandling
 import SendEmbed
 
 
+# STATUS: FINISHED
 # cog class for basic commands
 class BasicCommands(commands.Cog):
     def __init__(self, client):
@@ -52,7 +51,6 @@ class BasicCommands(commands.Cog):
         author = ctx.author
         channel = ctx.channel
         server = ctx.guild
-        send_here = ctx.send
 
         # check if the command is sent in wrong chat
         # return if sent in wrong channel
@@ -61,21 +59,21 @@ class BasicCommands(commands.Cog):
 
         # author checking stats of the bot itself
         if player == self.client.user:
-            await SendEmbed.send_bot_stats(author, send_here)
+            await SendEmbed.send_bot_stats(author, channel)
             return
 
         # author checking their own stats (when there is no @ referenced or the @ is the author)
         elif player is None or player == author:
 
             # add the author to players.json
-            await self.client.player_data.add_player(author)
+            await self.client.leaderboards_handling.add_player(author)
             user = author
 
         # author checking other player's stats
         else:
 
             # add the player to players.json
-            await self.client.player_data.add_player(player)
+            await self.client.leaderboards_handling.add_player(player)
             user = player
 
         # get each stat for user
@@ -91,7 +89,7 @@ class BasicCommands(commands.Cog):
         # send the stats
         await SendEmbed.send_stats(user, total_points, trashability_amt, opened_gift_points,
                                    killing_host_points, returned_gift_points, killing_guest_points,
-                                   author, send_here)
+                                   author, channel)
 
     # !leaderboards will send the leaderboards
     @commands.command()
@@ -105,23 +103,10 @@ class BasicCommands(commands.Cog):
         if await self.client.wrong_chat.check_basic_wc(author, channel.id, server):
             return
 
-        lb_name_id_list, lb_points_list, lb_death_bool_list = await LeaderboardsHandling.get_sorted_valid_stats()
-        lb_name_list = []
-        for user_id in lb_name_id_list:
-            bal = await self.client.fetch_user(user_id)
-
-            lb_name_list.append(bal.name)
-
-        lb_death_list = []
-        for boolean in lb_death_bool_list:
-            if boolean:
-                lb_death_list.append("Alive")
-            else:
-                lb_death_list.append("Dead")
-
         # send the leaderboards
-        await SendEmbed.send_leaderboards(lb_name_list, lb_points_list, lb_death_list, channel)
+        await self.client.leaderboards_handling.send_leaderboards(channel)
 
+    # !highscores will send the highscores
     @commands.command()
     async def highscores(self, ctx):
         author = ctx.author
@@ -133,11 +118,8 @@ class BasicCommands(commands.Cog):
         if await self.client.wrong_chat.check_basic_wc(author, channel.id, server):
             return
 
-        # get the list of players, the list of scores, the list of deaths
-        name_list, value_list, death_list = await self.client.player_data.make_highscores()
-
         # send the highscores
-        await SendEmbed.send_highscores(name_list, value_list, death_list, channel)
+        await self.client.highscore_handling.send_highscores(channel)
 
 
 # cog setup

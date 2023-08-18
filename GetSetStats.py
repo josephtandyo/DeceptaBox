@@ -11,19 +11,19 @@ async def get_stat(user_id, stat):
 async def increase_points(user_id, points_type):
     users = await DataHelper.get_player_data()
     users[str(user_id)][points_type] += 1
-    await DataHelper.update_data(users)
+    await DataHelper.update_player_data(users)
 
 
 async def decrease_trashability(user_id):
     users = await DataHelper.get_player_data()
     users[str(user_id)]["Trashability"] -= 1
-    await DataHelper.update_data(users)
+    await DataHelper.update_player_data(users)
 
 
-async def update_status(user_id, status_type, new_status):
+async def update_status(user_id, new_status, status_type):
     users = await DataHelper.get_player_data()
     users[str(user_id)][status_type] = new_status
-    await DataHelper.update_data(users)
+    await DataHelper.update_player_data(users)
 
 
 # host command updates
