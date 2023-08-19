@@ -1,5 +1,6 @@
 tokens.py
 /.idea
 /__pycache__
-img.png
 /cogs/__pycache__
+highscores.json
+players.json

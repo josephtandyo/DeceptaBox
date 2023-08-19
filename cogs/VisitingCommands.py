@@ -23,12 +23,15 @@ class VisitingCommands(commands.Cog):
         author = ctx.author
         channel = ctx.channel
         server = ctx.guild
-        # check to see if author and player can be DMs
+
+        # check to see if author and player can be DMd
         if await self.client.player_data.cant_dm_user(author):
             await SendEmbed.send_cant_dm_author(channel)
+            return
 
         if await self.client.player_data.cant_dm_user(player):
             await SendEmbed.send_cant_dm_player(player, channel)
+            return
 
         # check if the command is sent in wrong chat
         # if the results are true, then it was sent in wrong place and return and reset cooldown
@@ -45,6 +48,14 @@ class VisitingCommands(commands.Cog):
         # add the author and player to players.json
         await self.client.leaderboards_handling.add_player(author)
         await self.client.leaderboards_handling.add_player(player)
+
+        # check if the player being visited has been visited by this author already
+        visited_list = await GetSetStats.get_stat(author.id, "List Of Visitors")
+        for visited_players_id in visited_list:
+            if visited_players_id == player.id:
+                await SendEmbed.send_visited_already(author, player, channel)
+                self.client.get_command("visit").reset_cooldown(ctx)
+                return
 
         # check if author is dead and trying to visit
         # if the results are true then author is dead and return and reset cooldown
@@ -169,7 +180,6 @@ class VisitingCommands(commands.Cog):
 
         # author successfully leaves home
         else:
-
             player = await self.client.fetch_user(visiting_player_id)
             # set the new stats
             await GetSetStats.update_successful_home_stats(author.id, player.id)

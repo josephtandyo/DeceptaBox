@@ -86,10 +86,12 @@ class BasicCommands(commands.Cog):
         returned_gift_points = await GetSetStats.get_stat(user.id, "Declined Points")
         killing_guest_points = await GetSetStats.get_stat(user.id, "Kill Points")
 
+        death_status = await GetSetStats.get_stat(user.id, "Dead")
+        death = "Dead" if death_status else "Alive"
+
         # send the stats
-        await SendEmbed.send_stats(user, total_points, trashability_amt, opened_gift_points,
-                                   killing_host_points, returned_gift_points, killing_guest_points,
-                                   author, channel)
+        await SendEmbed.send_stats(author, user, channel, death, total_points, trashability_amt,
+                                   opened_gift_points, killing_host_points, returned_gift_points, killing_guest_points)
 
     # !leaderboards will send the leaderboards
     @commands.command()

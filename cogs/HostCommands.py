@@ -29,11 +29,17 @@ class HostCommands(commands.Cog):
         channel = ctx.channel
         server = ctx.guild
 
+        # check if the command is sent in the server
+        # return if sent in the server
+        if await self.client.wrong_chat.check_host_wc(author, server):
+            return
+
         # add the author to players.json
         await self.client.leaderboards_handling.add_player(author)
 
         # check the player that visited author
         visitors_id = await GetSetStats.get_stat(author.id, "Visited")
+
         # when author has no visitor
         if visitors_id is False:
             await SendEmbed.send_gift_no_one(author)
@@ -44,15 +50,10 @@ class HostCommands(commands.Cog):
         # check to see if author and player can be DMs
         if await self.client.player_data.cant_dm_user(channel):
             await SendEmbed.send_cant_dm_author(author)
+            return
 
         if await self.client.player_data.cant_dm_user(player):
             await SendEmbed.send_cant_dm_player(player, channel)
-
-
-
-        # check if the command is sent in the server
-        # return if sent in the server
-        if await self.client.wrong_chat.check_host_wc(author, server):
             return
 
         # when author has a visitor

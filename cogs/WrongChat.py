@@ -4,8 +4,7 @@ import settings
 
 
 # STATUS: FINISHED
-
-
+# class for wrong chat handling
 class WrongChat(commands.Cog):
 
     def __init__(self, client):
@@ -35,14 +34,14 @@ class WrongChat(commands.Cog):
             return True
         return False
 
-
-# check host commands if sent in wrong chat
-async def check_host_wc(author, server):
-    # host commands can't be said in the server
-    if server is not None:
-        await SendEmbed.send_host_wc(author)
-        return True
-    return False
+    # check host commands if sent in wrong chat
+    @staticmethod
+    async def check_host_wc(author, server):
+        # host commands can't be said in the server
+        if server is not None:
+            await SendEmbed.send_host_wc(author)
+            return True
+        return False
 
 
 # cog set up

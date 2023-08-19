@@ -4,6 +4,7 @@ import GetSetStats
 import SendEmbed
 
 
+# STATUS: FINISHED
 # cog class for leaderboards
 class LeaderboardsHandling(commands.Cog):
     def __init__(self, client):
@@ -32,6 +33,8 @@ class LeaderboardsHandling(commands.Cog):
         counter = 0
         for user_id in users.keys():
             user_point = await GetSetStats.get_stat(user_id, "Total Points")
+
+            # don't include players with no points
             if user_point == 0:
                 continue
 
@@ -73,10 +76,17 @@ class LeaderboardsHandling(commands.Cog):
         # send the leaderboards
         await SendEmbed.send_leaderboards(self.lb_name_list, self.lb_points_list, self.lb_status_list, channel)
 
+    # method to add player to players.json and leaderboards dictionary
     async def add_player(self, user):
+
+        # if the user is the bot itself, return
         if user == self.client.user:
             return
+
+        # get the json file
         users = await DataHelper.get_player_data()
+
+        # if they are already in the json file return
         if str(user.id) in users:
             return False
         else:
@@ -94,7 +104,8 @@ class LeaderboardsHandling(commands.Cog):
             users[str(user.id)]["Visiting"] = False
             users[str(user.id)]["Giver"] = False
             users[str(user.id)]["Dead"] = False
-            users[str(user.id)]["Join"] = False
+
+            users[str(user.id)]["List Of Visitors"] = []
 
         await DataHelper.update_player_data(users)
 

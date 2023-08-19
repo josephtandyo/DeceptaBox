@@ -24,8 +24,6 @@ client.leaderboards_handling = LeaderboardsHandling(client)
 client.highscore_handling = HighscoreHandling(client)
 
 
-# TODO put server link in dm bot so its faster to go to server
-#  # also use static methods
 @client.event
 async def on_ready():
     print("Ready")

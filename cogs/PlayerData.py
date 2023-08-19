@@ -1,7 +1,11 @@
 from discord.ext import commands
 import discord
 
+import SendEmbed
 
+
+# STATUS: FINISHED
+# class for player data for error messages regarding the use of commands
 class PlayerData(commands.Cog):
     def __init__(self, client):
         self.client = client
@@ -10,25 +14,29 @@ class PlayerData(commands.Cog):
     async def on_ready(self):
         print("PlayerData Cog is ready")
 
+    # this error is for when a player tries to visit another player when the visiting timer has not finished
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
-        if isinstance(error, commands.CommandOnCooldown):
-            em_tired = discord.Embed(color=discord.Color.yellow())
-            minutes = int(error.retry_after / 60)
-            rounded = (error.retry_after / 60) - minutes
-            seconds = int(rounded * 60)
-            em_tired.add_field(name=f"You can't visit anyone for **{minutes} minutes** and **{seconds} seconds**",
-                               value="This is because you are tired after the last visit")
-            em_tired.set_footer(text="To check how much time until the next visit, visit the bot in the DM")
-            await ctx.channel.send(embed=em_tired)
+        channel = ctx.channel
 
+        if isinstance(error, commands.CommandOnCooldown):
+            await SendEmbed.send_visit_time_error(channel, error)
+
+    # this error is for when a user has their privacy settings disabled, not allowing the bot to DM them
     async def cant_dm_user(self, user: discord.User):
+
+        # if there's no user or the user is the bot return
         if user is None or user == self.client.user:
             return
+
+        # try sending message
         try:
             await user.send()
+
+        # return true when they can't be DMd
         except discord.Forbidden:
             return True
+        # return false when they can be DMd
         except discord.HTTPException:
             return False
 

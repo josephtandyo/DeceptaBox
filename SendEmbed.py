@@ -1,6 +1,7 @@
 import discord
 
 
+# STATUS: FINISHED
 # message dm privacy settings disabled messages
 async def send_cant_dm_author(channel):
     em_wrong_c = discord.Embed(color=discord.Color.brand_red())
@@ -16,6 +17,18 @@ async def send_cant_dm_player(player, channel):
                          value=f"{player} needs to enable `Allow direct messages from server members` in their "
                                f"privacy and safety settings", inline=True)
     await channel.send(embed=em_wrong_c)
+
+
+# visit timer messages
+async def send_visit_time_error(channel, error):
+    em_tired = discord.Embed(color=discord.Color.yellow())
+    minutes = int(error.retry_after / 60)
+    rounded = (error.retry_after / 60) - minutes
+    seconds = int(rounded * 60)
+    em_tired.add_field(name=f"You can't visit anyone for **{minutes} minutes** and **{seconds} seconds**",
+                       value="This is because you are tired after the last visit")
+    em_tired.set_footer(text="To check how much time until the next visit, visit the bot in the DM")
+    await channel.send(embed=em_tired)
 
 
 # wrong chat messages
@@ -63,7 +76,7 @@ async def send_rules(channel):
     em_rules = discord.Embed(title="Here are the Basic Rules:", color=discord.Color.og_blurple())
     em_rules.add_field(name="The Main Goal is to Earn as Many Points as Possible Without Dying!",
                        value="\n"  # how many minutes
-                             "\n**1.** Every idk minutes, you may **visit** other players and act as the guest\n"
+                             "\n**1.** You may **visit** other players and act as the guest\n"
                              "\n**2.** The player you visited will act as the host\n"
                              "\n**3.** The host will have the option to give the guest a **nice** gift or a "
                              "**devious** gift\n "
@@ -129,10 +142,9 @@ async def send_guide(channel):
     await channel.send(embed=em_commands)
 
 
-async def send_stats(user, total_points, trashability_amt, opened_gift_points,
-                     killing_host_points, returned_gift_points, killing_guest_points,
-                     author, channel):
-    em_stat = discord.Embed(title=f"{user}'s Stats", color=discord.Color.teal())
+async def send_stats(author, user, channel, death_status, total_points, trashability_amt, opened_gift_points,
+                     killing_host_points, returned_gift_points, killing_guest_points):
+    em_stat = discord.Embed(title=f"{user}'s Stats  `{death_status}`", color=discord.Color.teal())
     em_stat.add_field(name="General Stats",
                       value="*Overall*\n\n"
                             "**Total Points:**\n"
@@ -186,7 +198,7 @@ async def send_highscores(name_list, value_list, death_list, channel):
     for num in range(len(name_list)):
         standings = str(num + 1)
         em_board.add_field(name=f"{standings}. {str(name_list[num])}",
-                           value=f"Total Points: {str(value_list[num])}  \n Deaths: {death_list[num]}")
+                           value=f"Highscore: {str(value_list[num])}  \n Deaths: {death_list[num]}")
 
         em_board.set_footer(text=f"Highscores are permanent and will be shown across servers!")
 
@@ -194,6 +206,14 @@ async def send_highscores(name_list, value_list, death_list, channel):
 
 
 # visiting commands messages
+async def send_visited_already(author, player, channel):
+    em_visit_alr = discord.Embed(color=discord.Color.red())
+    em_visit_alr.add_field(name=f"You have already visited {player.name}'s house!",
+                           value=f"You can only visit a user once. Try visiting someone else!")
+    em_visit_alr.set_footer(text=f"{author} tried to visit {player}")
+    await channel.send(embed=em_visit_alr)
+
+
 async def send_v_someone_else(author, player, channel, currently_visiting):
     em_else = discord.Embed(color=discord.Color.red())
     em_else.add_field(name=f"You are already at {currently_visiting.name}'s house!",
