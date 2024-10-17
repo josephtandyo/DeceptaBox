@@ -1,4 +1,4 @@
-# Grifter's Gift: A Discord Bot Deception Game
+# Deceiver's Offering: A Discord Bot Deception Game
 
 Status: FINISHED 
 ###### (with possible modifications in the future, including different roles that can give more points by doing a certain action)
