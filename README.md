@@ -1,7 +1,8 @@
 # Deceiver's Offering: A Discord Bot Deception Game
 
 Status: FINISHED 
-Fun Fact: This Discord Bot was used in a Discord server with more than 500 members! 
+
+Fun Fact: This Discord Bot was used and played in a Discord server with more than 500 members! Everyone enjoyed playing it :)
 
 ###### (with possible modifications in the future, including different roles that can give more points by doing a certain action)
 
