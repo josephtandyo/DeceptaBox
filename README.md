@@ -1,6 +1,8 @@
 # Deceiver's Offering: A Discord Bot Deception Game
 
 Status: FINISHED 
+Fun Fact: This Discord Bot was used in a Discord server with more than 500 members! 
+
 ###### (with possible modifications in the future, including different roles that can give more points by doing a certain action)
 
 Deceiver's Offering is a Discord Bot game that can be played on Discord with players ranging from 2 players to the entire Discord server!
