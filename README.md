@@ -3,7 +3,7 @@
 Status: FINISHED 
 ###### (with possible modifications in the future, including different roles that can give more points by doing a certain action)
 
-Grifter's Gift is a Discord Bot game that can be played on Discord with players ranging from 2 players to the entire Discord server!
+Deceiver's Offering is a Discord Bot game that can be played on Discord with players ranging from 2 players to the entire Discord server!
 
 The game is a simple deception game with the main goal being getting as many points possible without dying. When death occurs, it will be permanent!
 
